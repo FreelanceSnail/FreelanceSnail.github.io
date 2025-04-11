@@ -250,14 +250,8 @@ function updatePerformanceSummary() {
 
 // 初始化图表
 function initCharts() {
-  // 此处可以引入图表库如Chart.js或ECharts
-  // 示例：可以通过CDN引入Chart.js
-  const script = document.createElement('script');
-  script.src = 'https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js';
-  script.onload = function() {
-    updateCharts();
-  };
-  document.head.appendChild(script);
+  // Chart.js 已在 HTML 中加载，不需要动态加载
+  console.log('Chart.js is already loaded. Ready to create charts.');
 }
 
 // 更新图表
