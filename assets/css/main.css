@@ -1,0 +1,74 @@
+/* 全局样式 */
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.navbar-brand {
+  font-weight: bold;
+}
+
+main {
+  flex: 1;
+}
+
+/* 首页样式 */
+#dashboard-link {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+
+/* 持仓管理页面 */
+.dashboard-container {
+  padding-bottom: 2rem;
+}
+
+.page-title {
+  margin-bottom: 1.5rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.card {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  margin-bottom: 1.5rem;
+}
+
+.card-header {
+  background-color: #f8f9fa;
+  font-weight: 500;
+}
+
+#holdings-table th {
+  font-weight: 600;
+}
+
+#performance-summary {
+  padding: 1rem;
+  font-size: 1.1rem;
+}
+
+#performance-summary div {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #eee;
+}
+
+#performance-summary div:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .dashboard-container .col-md-3 {
+    margin-bottom: 1.5rem;
+  }
+} 
