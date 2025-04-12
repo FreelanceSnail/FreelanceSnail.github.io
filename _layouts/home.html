@@ -1,0 +1,93 @@
+---
+layout: default
+---
+
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <h1 class="mb-4">{{ page.title }}</h1>
+      <p class="lead mb-5">{{ site.description }}</p>
+    </div>
+  </div>
+  
+  <!-- 功能导航区域 -->
+  <div class="row mb-5">
+    <div class="col-12">
+      <h2 class="mb-4">功能导航</h2>
+    </div>
+    <div class="col-md-3 mb-4">
+      <div class="card h-100 text-center">
+        <div class="card-body">
+          <i class="fas fa-chart-line fa-3x mb-3 text-primary"></i>
+          <h5 class="card-title">持仓管理</h5>
+          <p class="card-text small">查看和分析投资组合数据</p>
+          <a href="{{ '/dashboard' | relative_url }}" class="btn btn-outline-primary mt-2">进入</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-4">
+      <div class="card h-100 text-center">
+        <div class="card-body">
+          <i class="fas fa-shield-alt fa-3x mb-3 text-danger"></i>
+          <h5 class="card-title">风险管理</h5>
+          <p class="card-text small">评估和控制投资风险</p>
+          <a href="{{ '/risk' | relative_url }}" class="btn btn-outline-primary mt-2">进入</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-4">
+      <div class="card h-100 text-center">
+        <div class="card-body">
+          <i class="fas fa-chart-bar fa-3x mb-3 text-success"></i>
+          <h5 class="card-title">指标管理</h5>
+          <p class="card-text small">技术与基本面指标分析</p>
+          <a href="{{ '/indicators' | relative_url }}" class="btn btn-outline-primary mt-2">进入</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-4">
+      <div class="card h-100 text-center">
+        <div class="card-body">
+          <i class="fas fa-chess fa-3x mb-3 text-info"></i>
+          <h5 class="card-title">策略管理</h5>
+          <p class="card-text small">回测和评估投资策略</p>
+          <a href="{{ '/strategies' | relative_url }}" class="btn btn-outline-primary mt-2">进入</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-12">
+      <h2 class="mb-4">最新文章</h2>
+      
+      <div class="row">
+        {% for post in site.posts limit:6 %}
+          <div class="col-md-4 mb-4">
+            <div class="card h-100">
+              <a href="{{ post.url | relative_url }}">
+                <img src="{{ post.cover_image | default: '/assets/images/default-cover.svg' | relative_url }}" 
+                     alt="{{ post.title }}" class="card-img-top" style="height: 180px; object-fit: cover;">
+              </a>
+              <div class="card-body">
+                <h5 class="card-title">
+                  <a href="{{ post.url | relative_url }}" class="text-decoration-none text-dark">{{ post.title }}</a>
+                </h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{ post.date | date: "%Y-%m-%d" }}</h6>
+                <p class="card-text small">{{ post.summary | default: post.excerpt | strip_html | truncate: 15 }}</p>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      
+      {% if site.posts.size > 6 %}
+        <div class="text-center mt-4">
+          <a href="{{ '/blog' | relative_url }}" class="btn btn-outline-primary">查看更多文章</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{{ content }} 

@@ -3,11 +3,14 @@ layout: post
 title:  "AIA项目正式启动"
 date:   2024-06-01 10:00:00 +0800
 categories: 开发
+sticky: true
+cover_image: /assets/images/launch.svg
+summary: 投资助手全新上线
 ---
 
 # AIA项目正式启动
 
-今天，我很高兴地宣布AIA（Asset Investment Assistant）项目正式启动！这是一个旨在帮助投资者更好地管理投资组合、分析风险和追踪投资策略的Web应用。
+今天，我很高兴地宣布AIA（AIA Investment Assistant）项目正式启动！这是一个旨在帮助投资者更好地管理投资组合、分析风险和追踪投资策略的Web应用。
 
 ## 项目背景
 

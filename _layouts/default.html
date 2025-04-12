@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% if page.title %}{{ page.title }} - {{ site.title }}{% else %}{{ site.title }}{% endif %}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
 </head>
 <body>
@@ -21,10 +22,19 @@
               <a class="nav-link" href="{{ '/' | relative_url }}">首页</a>
             </li>
             <li class="nav-item">
+              <a class="nav-link" href="{{ '/blog' | relative_url }}">博客</a>
+            </li>
+            <li class="nav-item">
               <a class="nav-link" href="{{ '/dashboard' | relative_url }}">持仓管理</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="{{ '/blog' | relative_url }}">博客</a>
+              <a class="nav-link" href="{{ '/risk' | relative_url }}">风险管理</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ '/indicators' | relative_url }}">指标管理</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ '/strategies' | relative_url }}">策略管理</a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ '/about' | relative_url }}">关于</a>

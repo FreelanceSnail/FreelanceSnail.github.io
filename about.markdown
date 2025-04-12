@@ -4,9 +4,7 @@ title: 关于
 permalink: /about/
 ---
 
-# 关于AIA
-
-AIA（Asset Investment Assistant）是一个资产投资助手应用，旨在帮助投资者更好地管理投资组合、分析风险和追踪投资策略。
+AIA（AIA Investment Assistant）是一个资产投资助手应用，旨在帮助投资者更好地管理投资组合、分析风险和追踪投资策略。
 
 ## 功能
 

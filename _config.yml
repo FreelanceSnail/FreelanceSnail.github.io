@@ -18,10 +18,10 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 
-title: AIA - Asset Investment Assistant
+title: AIA - AIA Investment Assistant
 email: your-email@example.com
 description: >- # this means to ignore newlines until "baseurl:"
-  AIA是一个资产投资助手应用，用于管理投资组合、分析风险和追踪投资策略。
+  AIA是AIA Investment Assistant的递归缩写，这是一个投资助手应用，用于管理投资组合、分析风险和追踪投资策略。
   这里我会分享我的开发进展和投资心得。
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site, e.g. http://example.com
