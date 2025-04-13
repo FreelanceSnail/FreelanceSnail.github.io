@@ -11,26 +11,21 @@ let portfolios = new Set();
 let assetTypes = new Set();
 let selectedPortfolio = 'all';
 let selectedType = 'all';
-let realtimeUpdate = false;
-let updateInterval = null;
 
 // DOM元素
 const portfolioSelector = document.getElementById('portfolio-selector');
 const typeFilter = document.getElementById('type-filter');
 const holdingsTable = document.getElementById('holdings-data');
-const realtimeSwitch = document.getElementById('realtime-switch');
 const totalAssetsElement = document.getElementById('total-assets');
 const totalProfitElement = document.getElementById('total-profit');
 const dailyProfitElement = document.getElementById('daily-profit');
 const assetAllocationChart = document.getElementById('asset-allocation-chart');
+const overviewTitleElement = document.getElementById('overview-title');
 
 // 页面加载完成后执行
 document.addEventListener('DOMContentLoaded', () => {
   // 获取持仓数据
   fetchHoldings();
-  
-  // 实时更新开关事件
-  realtimeSwitch.addEventListener('change', toggleRealtimeUpdate);
   
   // 初始化图表
   initCharts();
@@ -59,6 +54,7 @@ async function fetchHoldings() {
     updateTypeFilter();
     renderHoldingsTable();
     updatePerformanceSummary();
+    updateOverviewTitle();
     updateCharts();
     
   } catch (error) {
@@ -89,6 +85,7 @@ function updatePortfolioFilter() {
       selectedPortfolio = e.target.getAttribute('data-portfolio');
       renderHoldingsTable();
       updatePerformanceSummary();
+      updateOverviewTitle();
       updateCharts();
     });
   });
@@ -127,6 +124,7 @@ function updateTypeFilter() {
       selectedType = e.target.getAttribute('data-type');
       renderHoldingsTable();
       updatePerformanceSummary();
+      updateOverviewTitle();
       updateCharts();
     });
   });
@@ -339,14 +337,25 @@ function updateCharts() {
   }
 }
 
-// 切换实时更新
-function toggleRealtimeUpdate() {
-  realtimeUpdate = realtimeSwitch.checked;
+// 更新概览标题
+function updateOverviewTitle() {
+  const typeMap = {
+    'stock': '股票',
+    'etf': 'ETF',
+    'fund': '基金',
+    'future': '期货',
+    'option': '期权',
+    'us_stock': '美股',
+    'cash': '现金'
+  };
   
-  if (realtimeUpdate) {
-    // 每30秒刷新一次数据
-    updateInterval = setInterval(fetchHoldings, 30000);
+  if (selectedPortfolio === 'all' && selectedType === 'all') {
+    overviewTitleElement.textContent = '总体概览';
+  } else if (selectedType === 'all') {
+    overviewTitleElement.textContent = `${selectedPortfolio} 概览`;
   } else {
-    clearInterval(updateInterval);
+    const typeName = typeMap[selectedType] || selectedType;
+    const portfolioName = selectedPortfolio === 'all' ? '全部' : selectedPortfolio;
+    overviewTitleElement.textContent = `${portfolioName}-${typeName} 概览`;
   }
 } 
