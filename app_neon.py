@@ -79,70 +79,18 @@ def log_request_info():
     # 打印访问日志
     print(f"[{now}] {ip} - {method} {path} - 来源: {origin} - {user_agent} - 数据: {json_data}")
 
-# 初始化数据库
-def init_db():
-    """创建数据库表结构（如果不存在）"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # 创建holdings表
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS holdings (
-        id SERIAL PRIMARY KEY,
-        symbol TEXT,
-        name TEXT,
-        type TEXT,
-        current_price NUMERIC,
-        preclose_price NUMERIC,
-        account TEXT,
-        portfolio TEXT,
-        quantity NUMERIC,
-        avg_price NUMERIC,
-        exchange NUMERIC,
-        margin_ratio NUMERIC,
-        point_value NUMERIC,
-        target_symbol TEXT,
-        created_at TEXT,
-        updated_at TEXT
-    )
-    ''')
-    
-    cursor.close()
-    conn.close()
+# 初始化数据库表结构（只需调用一次）
+portfolio_manager.init_db()
 
 # API路由：获取所有持仓数据
+from portfolio_manager import PortfolioManager
+
+# 全局实例，避免多次连接/关闭数据库
+portfolio_manager = PortfolioManager()
+
 @app.route('/api/holdings', methods=['POST', 'GET'])
 def get_holdings():
-    conn = get_db_connection()
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    
-    cursor.execute('SELECT * FROM holdings')
-    rows = cursor.fetchall()
-    
-    result = []
-    for row in rows:
-        result.append({
-            'objectId': row['id'],
-            'symbol': row['symbol'],
-            'name': row['name'],
-            'type': row['type'],
-            'current_price': row['current_price'],
-            'preclose_price': row['preclose_price'],
-            'account': row['account'],
-            'portfolio': row['portfolio'],
-            'quantity': row['quantity'],
-            'avg_price': row['avg_price'],
-            'exchange': row['exchange'],
-            'margin_ratio': row['margin_ratio'],
-            'point_value': row['point_value'],
-            'target_symbol': row['target_symbol'],
-            'createdAt': row['created_at'],
-            'updatedAt': row['updated_at']
-        })
-    
-    cursor.close()
-    conn.close()
-    return jsonify({'results': result})
+    return jsonify({'results': portfolio_manager.read_holdings()})
 
 
 # 全局变量跟踪价格更新线程状态
@@ -153,18 +101,15 @@ price_update_thread = None
 def refresh_prices():
     global price_update_thread
     try:
-        from price_updater import update_prices
         import threading
-        
         # 检查是否已有线程在运行
         if price_update_thread and price_update_thread.is_alive():
             return jsonify({
                 'status': 'success',
                 'message': '价格更新任务已在运行中'
             })
-            
         # 启动后台线程执行价格更新
-        price_update_thread = threading.Thread(target=update_prices)
+        price_update_thread = threading.Thread(target=portfolio_manager.update_prices)
         price_update_thread.start()
         return jsonify({
             'status': 'success',

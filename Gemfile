@@ -22,7 +22,6 @@ end
 # and associated library.
 platforms :mingw, :x64_mingw, :mswin, :jruby do
   gem "tzinfo", ">= 1", "< 3"
-  gem "tzinfo-data"
 end
 
 # 添加tzinfo-data依赖，无论平台如何
