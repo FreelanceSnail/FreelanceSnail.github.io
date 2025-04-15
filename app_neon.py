@@ -15,8 +15,13 @@ except ImportError:
     print("python-dotenv未安装，仅使用系统环境变量")
 
 app = Flask(__name__)
-# 增强CORS配置，允许所有来源，包括GitHub Pages
-CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+# 限制CORS配置，仅允许指定域名和本地调试访问
+ALLOWED_ORIGINS = [
+    "https://freelancesnail.github.io",  # 你的GitHub Pages域名
+    "http://localhost:4001",            # 本地开发前端
+    "http://127.0.0.1:4001"             # 本地开发前端
+]
+CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGINS}}, supports_credentials=True)
 
 # 从环境变量获取Neon数据库连接信息
 NEON_HOST = os.environ.get('NEON_HOST', '')
