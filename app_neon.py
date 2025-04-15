@@ -149,7 +149,7 @@ def get_holdings():
 price_update_thread = None
 
 # 价格刷新路由
-@app.route('/refresh_prices', methods=['GET'])
+@app.route('/api/refresh_prices', methods=['GET'])
 def refresh_prices():
     global price_update_thread
     try:
