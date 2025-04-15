@@ -6,7 +6,7 @@ let selectedPortfolio = 'all';
 let selectedType = 'all';
 
 // 本地服务器地址
-const API_BASE_URL = 'https://c08c-2409-8a55-385d-cde1-a94a-528c-710-f6e0.ngrok-free.app/';
+const API_BASE_URL = 'http://localhost:5000';
 
 // DOM元素
 const portfolioSelector = document.getElementById('portfolio-selector');
