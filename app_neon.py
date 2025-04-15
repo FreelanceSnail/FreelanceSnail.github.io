@@ -105,63 +105,6 @@ def init_db():
     cursor.close()
     conn.close()
 
-# 从CSV文件导入数据
-def import_csv_data(csv_file):
-    """从CSV文件导入数据到数据库"""
-    import csv
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    # 清空现有数据
-    cursor.execute('TRUNCATE TABLE holdings RESTART IDENTITY')
-    
-    # 读取CSV文件并导入数据
-    with open(csv_file, 'r', encoding='utf-8') as f:
-        csv_reader = csv.reader(f)
-        header = next(csv_reader)  # 跳过表头
-        
-        now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
-        for row in csv_reader:
-            # 处理空值
-            for i in range(len(row)):
-                if row[i] == '':
-                    row[i] = None
-            
-            cursor.execute('''
-            INSERT INTO holdings (
-                symbol, name, type, current_price, preclose_price, 
-                account, portfolio, quantity, avg_price, exchange, 
-                margin_ratio, point_value, target_symbol, created_at, updated_at
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ''', (
-                row[0], row[1], row[2], 
-                float(row[3]) if row[3] is not None else None, 
-                float(row[4]) if row[4] is not None else None,
-                row[5], row[6], 
-                float(row[7]) if row[7] is not None else None, 
-                float(row[8]) if row[8] is not None else None, 
-                float(row[9]) if row[9] is not None else None,
-                float(row[10]) if row[10] is not None else None, 
-                float(row[11]) if row[11] is not None else None, 
-                row[12], now, now
-            ))
-    
-    cursor.close()
-    conn.close()
-
-# 检查数据库是否为空
-def is_db_empty():
-    """检查数据库是否为空"""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT COUNT(*) FROM holdings')
-    count = cursor.fetchone()[0]
-    cursor.close()
-    conn.close()
-    return count == 0
-
 # API路由：获取所有持仓数据
 @app.route('/api/holdings', methods=['POST', 'GET'])
 def get_holdings():
@@ -258,22 +201,6 @@ def query_holdings():
     conn.close()
     return jsonify({'results': result})
 
-# API路由：手动导入CSV数据
-@app.route('/api/import-csv', methods=['GET'])
-def import_csv():
-    csv_file = 'holdings_20250415_094150.csv'
-    if os.path.exists(csv_file):
-        import_csv_data(csv_file)
-        return jsonify({
-            'status': 'success',
-            'message': f'已成功从{csv_file}导入数据'
-        })
-    else:
-        return jsonify({
-            'status': 'error',
-            'message': f'找不到CSV文件: {csv_file}'
-        }), 404
-
 # 静态文件服务
 @app.route('/<path:path>')
 def serve_static(path):
@@ -287,12 +214,11 @@ def index():
         'message': 'Flask API服务运行正常 (Neon PostgreSQL版)',
         'endpoints': [
             '/api/holdings - 获取所有持仓数据',
-            '/api/holdings/query - 条件查询持仓数据',
-            '/api/import-csv - 手动导入CSV数据'
+            '/api/holdings/query - 条件查询持仓数据'
         ]
     })
 
-# 初始化数据库并导入数据
+# 初始化数据库
 if __name__ == '__main__':
     # 检查环境变量是否设置
     if not all([NEON_HOST, NEON_DB, NEON_USER, NEON_PASSWORD]):
@@ -312,27 +238,7 @@ if __name__ == '__main__':
         print(f"初始化数据库时出错: {str(e)}")
         sys.exit(1)
     
-    # 检查命令行参数
-    import_flag = '--import-csv' in sys.argv
-    
-    # 检查是否需要导入数据
-    csv_file = 'holdings_20250415_094150.csv'
-    if import_flag:
-        # 明确要求导入数据
-        if os.path.exists(csv_file):
-            import_csv_data(csv_file)
-            print(f"已从{csv_file}导入数据")
-        else:
-            print(f"找不到CSV文件: {csv_file}")
-    elif is_db_empty() and os.path.exists(csv_file):
-        # 仅在数据库为空时导入数据
-        import_csv_data(csv_file)
-        print(f"数据库为空，已从{csv_file}导入初始数据")
-    else:
-        print("保留现有数据库内容，未导入CSV数据")
-    
     print("Flask后端服务已启动，监听端口5000...")
     print("连接到Neon PostgreSQL数据库")
     print("访问 http://localhost:4001 查看完整应用")
-    print("要手动导入CSV数据，可访问: http://localhost:5000/api/import-csv")
-    app.run(debug=True, port=5000) 
+    app.run(debug=True, port=5000)

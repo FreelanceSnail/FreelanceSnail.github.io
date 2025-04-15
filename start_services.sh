@@ -14,9 +14,9 @@ open -a Terminal.app "bash -c \"bundle exec jekyll serve; read -p 'Press Enter t
 
 # 在后台启动Flask服务
 echo "正在启动Flask服务..."
-gnome-terminal -- bash -c "python app.py; read -p 'Press Enter to close...'" || \
-xterm -e "python app.py; read -p 'Press Enter to close...'" || \
-open -a Terminal.app "bash -c \"python app.py; read -p 'Press Enter to close...'\""
+gnome-terminal -- bash -c "python app_neon.py; read -p 'Press Enter to close...'" || \
+xterm -e "python app_neon.py; read -p 'Press Enter to close...'" || \
+open -a Terminal.app "bash -c \"python app_neon.py; read -p 'Press Enter to close...'\""
 
 echo "服务启动完成！"
 echo "Jekyll前端服务地址: http://localhost:4000"
