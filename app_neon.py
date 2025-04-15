@@ -88,8 +88,19 @@ from portfolio_manager import PortfolioManager
 # 全局实例，避免多次连接/关闭数据库
 portfolio_manager = PortfolioManager()
 
+import os
+PORTFOLIO_PASSWORD = os.environ.get('PORTFOLIO_PASSWORD', '')
+
 @app.route('/api/holdings', methods=['POST', 'GET'])
 def get_holdings():
+    password = ''
+    if request.method == 'POST':
+        data = request.get_json()
+        password = data.get('password', '') if data else ''
+    else:
+        password = request.args.get('password', '')
+    if password != PORTFOLIO_PASSWORD:
+        return jsonify({'error': '密码错误'}), 401
     return jsonify({'results': portfolio_manager.read_holdings()})
 
 
@@ -97,9 +108,18 @@ def get_holdings():
 price_update_thread = None
 
 # 价格刷新路由
-@app.route('/api/refresh_prices', methods=['GET'])
+@app.route('/api/refresh_prices', methods=['GET', 'POST'])
 def refresh_prices():
     global price_update_thread
+    # 密码支持GET参数或POST body
+    password = ''
+    if request.method == 'POST':
+        data = request.get_json()
+        password = data.get('password', '') if data else ''
+    else:
+        password = request.args.get('password', '')
+    if password != PORTFOLIO_PASSWORD:
+        return jsonify({'error': '密码错误'}), 401
     try:
         import threading
         # 检查是否已有线程在运行
