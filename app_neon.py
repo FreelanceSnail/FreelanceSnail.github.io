@@ -145,6 +145,37 @@ def get_holdings():
     return jsonify({'results': result})
 
 
+# 全局变量跟踪价格更新线程状态
+price_update_thread = None
+
+# 价格刷新路由
+@app.route('/refresh_prices', methods=['GET'])
+def refresh_prices():
+    global price_update_thread
+    try:
+        from price_updater import update_prices
+        import threading
+        
+        # 检查是否已有线程在运行
+        if price_update_thread and price_update_thread.is_alive():
+            return jsonify({
+                'status': 'success',
+                'message': '价格更新任务已在运行中'
+            })
+            
+        # 启动后台线程执行价格更新
+        price_update_thread = threading.Thread(target=update_prices)
+        price_update_thread.start()
+        return jsonify({
+            'status': 'success',
+            'message': '价格更新任务已开始'
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'价格更新任务启动失败: {str(e)}'
+        }), 500
+
 # 静态文件服务
 @app.route('/<path:path>')
 def serve_static(path):
