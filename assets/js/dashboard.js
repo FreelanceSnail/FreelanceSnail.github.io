@@ -6,7 +6,7 @@ let selectedPortfolio = 'all';
 let selectedType = 'all';
 
 // 本地服务器地址
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://freelancesnail-data-api.onrender.com/';
 
 // DOM元素
 const portfolioSelector = document.getElementById('portfolio-selector');
