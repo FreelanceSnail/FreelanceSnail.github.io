@@ -23,31 +23,6 @@ ALLOWED_ORIGINS = [
 ]
 CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGINS}}, supports_credentials=True)
 
-# 从环境变量获取Neon数据库连接信息
-NEON_HOST = os.environ.get('NEON_HOST', '')
-NEON_PORT = os.environ.get('NEON_PORT', '5432')
-NEON_DB = os.environ.get('NEON_DB', '')
-NEON_USER = os.environ.get('NEON_USER', '')
-NEON_PASSWORD = os.environ.get('NEON_PASSWORD', '')
-
-# 获取数据库连接
-def get_db_connection():
-    """创建到Neon PostgreSQL的数据库连接"""
-    # 检查连接信息是否完整
-    if not all([NEON_HOST, NEON_DB, NEON_USER, NEON_PASSWORD]):
-        raise ValueError("数据库连接信息不完整，请确保已设置所有必要的环境变量")
-        
-    conn = psycopg2.connect(
-        host=NEON_HOST,
-        port=NEON_PORT,
-        dbname=NEON_DB,
-        user=NEON_USER,
-        password=NEON_PASSWORD,
-        sslmode='require'  # Neon需要SSL连接
-    )
-    conn.autocommit = True
-    return conn
-
 # 请求日志中间件
 @app.before_request
 def log_request_info():
@@ -79,14 +54,15 @@ def log_request_info():
     # 打印访问日志
     print(f"[{now}] {ip} - {method} {path} - 来源: {origin} - {user_agent} - 数据: {json_data}")
 
-# 初始化数据库表结构（只需调用一次）
-portfolio_manager.init_db()
 
 # API路由：获取所有持仓数据
 from portfolio_manager import PortfolioManager
 
 # 全局实例，避免多次连接/关闭数据库
 portfolio_manager = PortfolioManager()
+
+# 初始化数据库表结构（只需调用一次）
+portfolio_manager.init_db()
 
 import os
 PORTFOLIO_PASSWORD = os.environ.get('PORTFOLIO_PASSWORD', '')
@@ -159,24 +135,6 @@ def index():
 
 # 初始化数据库
 if __name__ == '__main__':
-    # 检查环境变量是否设置
-    if not all([NEON_HOST, NEON_DB, NEON_USER, NEON_PASSWORD]):
-        print("错误: 数据库连接信息不完整")
-        print("请确保已设置以下环境变量或在.env文件中定义:")
-        print("- NEON_HOST")
-        print("- NEON_PORT (可选，默认5432)")
-        print("- NEON_DB")
-        print("- NEON_USER")
-        print("- NEON_PASSWORD")
-        sys.exit(1)
-        
-    # 初始化数据库结构
-    try:
-        init_db()
-    except Exception as e:
-        print(f"初始化数据库时出错: {str(e)}")
-        sys.exit(1)
-    
     print("Flask后端服务已启动，监听端口5000...")
     print("连接到Neon PostgreSQL数据库")
     print("访问 http://localhost:4001 查看完整应用")

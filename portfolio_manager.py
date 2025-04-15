@@ -81,6 +81,7 @@ class PortfolioManager:
         从akshare获取实时价格数据并更新数据库
         返回: 更新后的持仓数据列表
         """
+        return []
         try:
             holdings = self.read_holdings()
             if not holdings:
