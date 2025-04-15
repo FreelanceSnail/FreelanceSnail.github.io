@@ -7,7 +7,8 @@ import datetime
 import sys
 
 app = Flask(__name__)
-CORS(app)  # 启用CORS支持
+# 增强CORS配置，允许所有来源，包括GitHub Pages
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 # 数据库配置
 DB_PATH = 'holdings.db'
@@ -29,6 +30,9 @@ def log_request_info():
     # 获取User-Agent
     user_agent = request.headers.get('User-Agent', 'Unknown')
     
+    # 获取Origin
+    origin = request.headers.get('Origin', 'Unknown')
+    
     # 获取请求数据（如果是JSON）
     json_data = ''
     if request.is_json and request.data:
@@ -38,7 +42,7 @@ def log_request_info():
             json_data = '解析JSON失败'
     
     # 打印访问日志
-    print(f"[{now}] {ip} - {method} {path} - {user_agent} - 数据: {json_data}")
+    print(f"[{now}] {ip} - {method} {path} - 来源: {origin} - {user_agent} - 数据: {json_data}")
 
 # 初始化数据库
 def init_db():
