@@ -139,67 +139,6 @@ def get_holdings():
     conn.close()
     return jsonify({'results': result})
 
-# API路由：通过条件查询持仓数据
-@app.route('/api/holdings/query', methods=['POST', 'GET'])
-def query_holdings():
-    where = {}
-    
-    # 处理POST JSON请求
-    if request.method == 'POST' and request.is_json:
-        try:
-            query_params = request.json or {}
-            where = query_params.get('where', {})
-        except:
-            # 如果JSON解析失败，使用空字典
-            pass
-    
-    # 处理GET请求的参数
-    elif request.method == 'GET':
-        portfolio = request.args.get('portfolio')
-        type_ = request.args.get('type')
-        
-        if portfolio:
-            where['portfolio'] = portfolio
-        if type_:
-            where['type'] = type_
-    
-    conn = get_db_connection()
-    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    
-    query = 'SELECT * FROM holdings WHERE 1=1'
-    params = []
-    
-    for key, value in where.items():
-        query += f' AND {key} = %s'
-        params.append(value)
-    
-    cursor.execute(query, params)
-    rows = cursor.fetchall()
-    
-    result = []
-    for row in rows:
-        result.append({
-            'objectId': row['id'],
-            'symbol': row['symbol'],
-            'name': row['name'],
-            'type': row['type'],
-            'current_price': row['current_price'],
-            'preclose_price': row['preclose_price'],
-            'account': row['account'],
-            'portfolio': row['portfolio'],
-            'quantity': row['quantity'],
-            'avg_price': row['avg_price'],
-            'exchange': row['exchange'],
-            'margin_ratio': row['margin_ratio'],
-            'point_value': row['point_value'],
-            'target_symbol': row['target_symbol'],
-            'createdAt': row['created_at'],
-            'updatedAt': row['updated_at']
-        })
-    
-    cursor.close()
-    conn.close()
-    return jsonify({'results': result})
 
 # 静态文件服务
 @app.route('/<path:path>')
@@ -213,8 +152,7 @@ def index():
         'status': 'success',
         'message': 'Flask API服务运行正常 (Neon PostgreSQL版)',
         'endpoints': [
-            '/api/holdings - 获取所有持仓数据',
-            '/api/holdings/query - 条件查询持仓数据'
+            '/api/holdings - 获取所有持仓数据'
         ]
     })
 

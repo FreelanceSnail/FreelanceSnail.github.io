@@ -5,6 +5,18 @@ let assetTypes = new Set();
 let selectedPortfolio = 'all';
 let selectedType = 'all';
 
+// 资产类型映射
+const typeMap = {
+  'stock': '股票',
+  'etf': 'ETF',
+  'fund': '基金',
+  'future': '期货',
+  'option': '期权',
+  'us_stock': '美股',
+  'hk_stock': '港股',
+  'cash': '现金'
+};
+
 // 本地服务器地址
 const API_BASE_URL = 'https://freelancesnail-data-api.onrender.com';
 
@@ -50,8 +62,8 @@ async function fetchHoldings() {
     assetTypes.clear();
     
     holdingsData.forEach(holding => {
-      if (holding.portfolio) portfolios.add(holding.portfolio);
-      if (holding.type) assetTypes.add(holding.type);
+      portfolios.add(holding.portfolio);
+      assetTypes.add(holding.type);
     });
     
     // 更新UI
@@ -64,34 +76,19 @@ async function fetchHoldings() {
     
   } catch (error) {
     console.error('获取持仓数据失败:', error);
-    holdingsTable.innerHTML = `<tr><td colspan="8" class="text-center text-danger">获取数据失败: ${error.message}</td></tr>`;
+    holdingsTable.innerHTML = `<tr><td colspan=\"8\" class=\"text-center text-danger\">获取数据失败: ${error.message}</td></tr>`;
+    holdingsData = [];
+    portfolios.clear();
+    assetTypes.clear();
+    updatePortfolioFilter();
+    updateTypeFilter();
+    renderHoldingsTable();
+    updatePerformanceSummary();
+    updateOverviewTitle();
+    updateCharts();
   }
 }
 
-// 根据条件查询持仓数据
-async function queryHoldings(conditions = {}) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/holdings/query`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        where: conditions
-      })
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP错误 ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return data.results;
-  } catch (error) {
-    console.error('查询持仓数据失败:', error);
-    return [];
-  }
-}
 
 // 更新投资组合过滤器
 function updatePortfolioFilter() {
@@ -108,32 +105,12 @@ function updatePortfolioFilter() {
   
   // 添加事件监听器
   document.querySelectorAll('#portfolio-selector a').forEach(item => {
-    item.addEventListener('click', async (e) => {
+    item.addEventListener('click', (e) => {
       e.preventDefault();
       document.querySelectorAll('#portfolio-selector a').forEach(el => el.classList.remove('active'));
       e.target.classList.add('active');
       selectedPortfolio = e.target.getAttribute('data-portfolio');
-      
-      if (selectedPortfolio !== 'all' || selectedType !== 'all') {
-        const conditions = {};
-        if (selectedPortfolio !== 'all') conditions.portfolio = selectedPortfolio;
-        if (selectedType !== 'all') conditions.type = selectedType;
-        
-        // 使用API查询符合条件的数据
-        const filteredResults = await queryHoldings(conditions);
-        if (filteredResults.length > 0) {
-          // 仅更新符合条件的数据
-          holdingsData = filteredResults;
-        }
-      } else {
-        // 如果选择的是"全部"，重新加载所有数据
-        await fetchHoldings();
-      }
-      
-      renderHoldingsTable();
-      updatePerformanceSummary();
-      updateOverviewTitle();
-      updateCharts();
+      updateFilteredAndRender();
     });
   });
 }
@@ -144,15 +121,7 @@ function updateTypeFilter() {
              (selectedType === 'all' ? 'active' : '') + 
              '" data-type="all">全部</a>';
   
-  const typeMap = {
-    'stock': '股票',
-    'etf': 'ETF',
-    'fund': '基金',
-    'future': '期货',
-    'option': '期权',
-    'us_stock': '美股',
-    'cash': '现金'
-  };
+  // 使用全局typeMap获取类型名称
   
   assetTypes.forEach(type => {
     const displayName = typeMap[type] || type;
@@ -164,47 +133,26 @@ function updateTypeFilter() {
   
   // 添加事件监听器
   document.querySelectorAll('#type-filter a').forEach(item => {
-    item.addEventListener('click', async (e) => {
+    item.addEventListener('click', (e) => {
       e.preventDefault();
       document.querySelectorAll('#type-filter a').forEach(el => el.classList.remove('active'));
       e.target.classList.add('active');
       selectedType = e.target.getAttribute('data-type');
-      
-      if (selectedPortfolio !== 'all' || selectedType !== 'all') {
-        const conditions = {};
-        if (selectedPortfolio !== 'all') conditions.portfolio = selectedPortfolio;
-        if (selectedType !== 'all') conditions.type = selectedType;
-        
-        // 使用API查询符合条件的数据
-        const filteredResults = await queryHoldings(conditions);
-        if (filteredResults.length > 0) {
-          // 仅更新符合条件的数据
-          holdingsData = filteredResults;
-        }
-      } else {
-        // 如果选择的是"全部"，重新加载所有数据
-        await fetchHoldings();
-      }
-      
-      renderHoldingsTable();
-      updatePerformanceSummary();
-      updateOverviewTitle();
-      updateCharts();
+      updateFilteredAndRender();
     });
   });
 }
 
 // 渲染持仓表格
-function renderHoldingsTable() {
-  if (holdingsData.length === 0) {
+function renderHoldingsTable(data) {
+  const arr = data || holdingsData;
+  if (!arr.length) {
     holdingsTable.innerHTML = '<tr><td colspan="8" class="text-center">没有符合条件的持仓</td></tr>';
     return;
   }
-  
   // 生成表格内容
   let html = '';
-  
-  holdingsData.forEach(holding => {
+  arr.forEach(holding => {
     const currentPrice = holding.current_price || 0;
     const costPrice = holding.avg_price || 0;
     const quantity = holding.quantity || 0;
@@ -213,16 +161,7 @@ function renderHoldingsTable() {
     const profit = (currentPrice - costPrice) * quantity;
     const profitPercent = costPrice > 0 ? (currentPrice / costPrice - 1) * 100 : 0;
     
-    // 获取类型的中文名称
-    const typeMap = {
-      'stock': '股票',
-      'etf': 'ETF',
-      'fund': '基金',
-      'future': '期货',
-      'option': '期权',
-      'us_stock': '美股',
-      'cash': '现金'
-    };
+    // 使用全局typeMap获取类型名称
     const typeName = typeMap[holding.type] || holding.type;
     
     // 格式化数字
@@ -254,13 +193,14 @@ function renderHoldingsTable() {
 }
 
 // 更新绩效概览
-function updatePerformanceSummary() {
+function updatePerformanceSummary(data) {
+  const arr = data || holdingsData;
   // 计算总资产和总盈亏
   let totalAssets = 0;
   let totalProfit = 0;
   let dailyProfit = 0;
   
-  holdingsData.forEach(holding => {
+  arr.forEach(holding => {
     const currentPrice = holding.current_price || 0;
     const costPrice = holding.avg_price || 0;
     const quantity = holding.quantity || 0;
@@ -303,15 +243,10 @@ function initCharts() {
 }
 
 // 更新图表
-function updateCharts() {
+function updateCharts(data) {
   // 如果Chart.js已加载，则创建资产配置图表
   if (typeof Chart !== 'undefined' && assetAllocationChart) {
-    // 过滤数据
-    const filteredData = holdingsData.filter(holding => {
-      const portfolioMatch = selectedPortfolio === 'all' || holding.portfolio === selectedPortfolio;
-      const typeMatch = selectedType === 'all' || holding.type === selectedType;
-      return portfolioMatch && typeMatch;
-    });
+    const filteredData = data || holdingsData || [];
     
     // 按类型分组资产
     const assetsByType = {};
@@ -332,6 +267,7 @@ function updateCharts() {
       'future': '期货',
       'option': '期权',
       'us_stock': '美股',
+      'hk_stock': '港股',
       'cash': '现金'
     };
     
@@ -348,7 +284,7 @@ function updateCharts() {
     
     // 准备图表数据
     const labels = Object.keys(assetsByType).map(type => typeMap[type] || type);
-    const data = Object.values(assetsByType);
+    const chartData = Object.values(assetsByType);
     const colors = Object.keys(assetsByType).map(type => typeColors[type] || '#ccc');
     
     // 销毁旧图表
@@ -363,7 +299,7 @@ function updateCharts() {
       data: {
         labels: labels,
         datasets: [{
-          data: data,
+          data: chartData,
           backgroundColor: colors,
           hoverOffset: 4
         }]
@@ -387,6 +323,21 @@ function updateCharts() {
   }
 }
 
+// 本地筛选和渲染主函数
+function updateFilteredAndRender() {
+  let filtered = holdingsData;
+  if (selectedPortfolio !== 'all') {
+    filtered = filtered.filter(item => item.portfolio === selectedPortfolio);
+  }
+  if (selectedType !== 'all') {
+    filtered = filtered.filter(item => item.type === selectedType);
+  }
+  renderHoldingsTable(filtered);
+  updatePerformanceSummary(filtered);
+  updateOverviewTitle();
+  updateCharts(filtered);
+}
+
 // 更新概览标题
 function updateOverviewTitle() {
   const typeMap = {
@@ -408,4 +359,4 @@ function updateOverviewTitle() {
     const portfolioName = selectedPortfolio === 'all' ? '全部' : selectedPortfolio;
     overviewTitleElement.textContent = `${portfolioName}-${typeName} 概览`;
   }
-} 
+}
