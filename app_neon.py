@@ -6,20 +6,32 @@ import os
 import datetime
 import sys
 
+# 尝试导入python-dotenv（如果安装了）
+try:
+    from dotenv import load_dotenv
+    load_dotenv()  # 加载.env文件中的环境变量
+    print("已加载.env环境变量")
+except ImportError:
+    print("python-dotenv未安装，仅使用系统环境变量")
+
 app = Flask(__name__)
 # 增强CORS配置，允许所有来源，包括GitHub Pages
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
-# Neon数据库连接信息
-NEON_HOST = 'ep-lucky-resonance-a10togbn-pooler.ap-southeast-1.aws.neon.tech'  # 例如: ep-cool-darkness-123456.us-east-2.aws.neon.tech
-NEON_PORT = '5432'  # 通常是5432
-NEON_DB = 'aia'  # 例如: neondb
-NEON_USER = 'neondb_owner'  # 例如: user
-NEON_PASSWORD = 'npg_x1cOAL9DBmbk'  # 您的密码
+# 从环境变量获取Neon数据库连接信息
+NEON_HOST = os.environ.get('NEON_HOST', '')
+NEON_PORT = os.environ.get('NEON_PORT', '5432')
+NEON_DB = os.environ.get('NEON_DB', '')
+NEON_USER = os.environ.get('NEON_USER', '')
+NEON_PASSWORD = os.environ.get('NEON_PASSWORD', '')
 
 # 获取数据库连接
 def get_db_connection():
     """创建到Neon PostgreSQL的数据库连接"""
+    # 检查连接信息是否完整
+    if not all([NEON_HOST, NEON_DB, NEON_USER, NEON_PASSWORD]):
+        raise ValueError("数据库连接信息不完整，请确保已设置所有必要的环境变量")
+        
     conn = psycopg2.connect(
         host=NEON_HOST,
         port=NEON_PORT,
@@ -282,12 +294,23 @@ def index():
 
 # 初始化数据库并导入数据
 if __name__ == '__main__':
-    if NEON_HOST == 'YOUR_NEON_HOST':
-        print("错误: 请先在脚本中配置您的Neon连接信息")
+    # 检查环境变量是否设置
+    if not all([NEON_HOST, NEON_DB, NEON_USER, NEON_PASSWORD]):
+        print("错误: 数据库连接信息不完整")
+        print("请确保已设置以下环境变量或在.env文件中定义:")
+        print("- NEON_HOST")
+        print("- NEON_PORT (可选，默认5432)")
+        print("- NEON_DB")
+        print("- NEON_USER")
+        print("- NEON_PASSWORD")
         sys.exit(1)
         
     # 初始化数据库结构
-    init_db()
+    try:
+        init_db()
+    except Exception as e:
+        print(f"初始化数据库时出错: {str(e)}")
+        sys.exit(1)
     
     # 检查命令行参数
     import_flag = '--import-csv' in sys.argv
