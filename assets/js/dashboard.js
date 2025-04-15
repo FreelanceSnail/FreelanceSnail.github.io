@@ -1,16 +1,12 @@
-// 初始化LeanCloud应用
-AV.init({
-  appId: 'To9hBq0TNFRLU90cDkhklEI6-MdYXbMMI',
-  appKey: '5p5CVOXd9zSi1207VBwLExC4',
-  serverURL: 'https://to9hbq0t.api.lncldglobal.com'
-});
-
 // 持仓数据和过滤选项
 let holdingsData = [];
 let portfolios = new Set();
 let assetTypes = new Set();
 let selectedPortfolio = 'all';
 let selectedType = 'all';
+
+// 本地服务器地址
+const API_BASE_URL = 'http://localhost:5000';
 
 // DOM元素
 const portfolioSelector = document.getElementById('portfolio-selector');
@@ -31,14 +27,23 @@ document.addEventListener('DOMContentLoaded', () => {
   initCharts();
 });
 
-// 从LeanCloud获取持仓数据
+// 从本地服务器获取持仓数据
 async function fetchHoldings() {
   try {
-    const query = new AV.Query('holdings');
-    query.limit(1000); // 设置一个足够大的限制以获取所有数据
+    const response = await fetch(`${API_BASE_URL}/api/holdings`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({}) // 发送空的JSON对象作为请求体
+    });
     
-    const results = await query.find();
-    holdingsData = results.map(item => item.toJSON());
+    if (!response.ok) {
+      throw new Error(`HTTP错误 ${response.status}`);
+    }
+    
+    const data = await response.json();
+    holdingsData = data.results;
     
     // 提取投资组合和资产类型
     portfolios.clear();
@@ -63,6 +68,31 @@ async function fetchHoldings() {
   }
 }
 
+// 根据条件查询持仓数据
+async function queryHoldings(conditions = {}) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/holdings/query`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        where: conditions
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP错误 ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.results;
+  } catch (error) {
+    console.error('查询持仓数据失败:', error);
+    return [];
+  }
+}
+
 // 更新投资组合过滤器
 function updatePortfolioFilter() {
   let html = '<a href="#" class="list-group-item list-group-item-action ' + 
@@ -78,11 +108,28 @@ function updatePortfolioFilter() {
   
   // 添加事件监听器
   document.querySelectorAll('#portfolio-selector a').forEach(item => {
-    item.addEventListener('click', (e) => {
+    item.addEventListener('click', async (e) => {
       e.preventDefault();
       document.querySelectorAll('#portfolio-selector a').forEach(el => el.classList.remove('active'));
       e.target.classList.add('active');
       selectedPortfolio = e.target.getAttribute('data-portfolio');
+      
+      if (selectedPortfolio !== 'all' || selectedType !== 'all') {
+        const conditions = {};
+        if (selectedPortfolio !== 'all') conditions.portfolio = selectedPortfolio;
+        if (selectedType !== 'all') conditions.type = selectedType;
+        
+        // 使用API查询符合条件的数据
+        const filteredResults = await queryHoldings(conditions);
+        if (filteredResults.length > 0) {
+          // 仅更新符合条件的数据
+          holdingsData = filteredResults;
+        }
+      } else {
+        // 如果选择的是"全部"，重新加载所有数据
+        await fetchHoldings();
+      }
+      
       renderHoldingsTable();
       updatePerformanceSummary();
       updateOverviewTitle();
@@ -117,11 +164,28 @@ function updateTypeFilter() {
   
   // 添加事件监听器
   document.querySelectorAll('#type-filter a').forEach(item => {
-    item.addEventListener('click', (e) => {
+    item.addEventListener('click', async (e) => {
       e.preventDefault();
       document.querySelectorAll('#type-filter a').forEach(el => el.classList.remove('active'));
       e.target.classList.add('active');
       selectedType = e.target.getAttribute('data-type');
+      
+      if (selectedPortfolio !== 'all' || selectedType !== 'all') {
+        const conditions = {};
+        if (selectedPortfolio !== 'all') conditions.portfolio = selectedPortfolio;
+        if (selectedType !== 'all') conditions.type = selectedType;
+        
+        // 使用API查询符合条件的数据
+        const filteredResults = await queryHoldings(conditions);
+        if (filteredResults.length > 0) {
+          // 仅更新符合条件的数据
+          holdingsData = filteredResults;
+        }
+      } else {
+        // 如果选择的是"全部"，重新加载所有数据
+        await fetchHoldings();
+      }
+      
       renderHoldingsTable();
       updatePerformanceSummary();
       updateOverviewTitle();
@@ -132,14 +196,7 @@ function updateTypeFilter() {
 
 // 渲染持仓表格
 function renderHoldingsTable() {
-  // 过滤数据
-  const filteredData = holdingsData.filter(holding => {
-    const portfolioMatch = selectedPortfolio === 'all' || holding.portfolio === selectedPortfolio;
-    const typeMatch = selectedType === 'all' || holding.type === selectedType;
-    return portfolioMatch && typeMatch;
-  });
-  
-  if (filteredData.length === 0) {
+  if (holdingsData.length === 0) {
     holdingsTable.innerHTML = '<tr><td colspan="8" class="text-center">没有符合条件的持仓</td></tr>';
     return;
   }
@@ -147,7 +204,7 @@ function renderHoldingsTable() {
   // 生成表格内容
   let html = '';
   
-  filteredData.forEach(holding => {
+  holdingsData.forEach(holding => {
     const currentPrice = holding.current_price || 0;
     const costPrice = holding.avg_price || 0;
     const quantity = holding.quantity || 0;
@@ -198,19 +255,12 @@ function renderHoldingsTable() {
 
 // 更新绩效概览
 function updatePerformanceSummary() {
-  // 过滤数据
-  const filteredData = holdingsData.filter(holding => {
-    const portfolioMatch = selectedPortfolio === 'all' || holding.portfolio === selectedPortfolio;
-    const typeMatch = selectedType === 'all' || holding.type === selectedType;
-    return portfolioMatch && typeMatch;
-  });
-  
   // 计算总资产和总盈亏
   let totalAssets = 0;
   let totalProfit = 0;
   let dailyProfit = 0;
   
-  filteredData.forEach(holding => {
+  holdingsData.forEach(holding => {
     const currentPrice = holding.current_price || 0;
     const costPrice = holding.avg_price || 0;
     const quantity = holding.quantity || 0;
