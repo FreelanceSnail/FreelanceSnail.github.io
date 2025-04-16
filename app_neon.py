@@ -18,8 +18,8 @@ app = Flask(__name__)
 # 限制CORS配置，仅允许指定域名和本地调试访问
 ALLOWED_ORIGINS = [
     "https://freelancesnail.github.io",  # 你的GitHub Pages域名
-    "http://localhost:4001",            # 本地开发前端
-    "http://127.0.0.1:4001"             # 本地开发前端
+    "http://localhost:4000",            # 本地开发前端
+    "http://127.0.0.1:4000"             # 本地开发前端
 ]
 CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGINS}}, supports_credentials=True)
 
@@ -135,7 +135,9 @@ def index():
 
 # 初始化数据库
 if __name__ == '__main__':
-    print("Flask后端服务已启动，监听端口5000...")
+    import os
+    host = '0.0.0.0'
+    port = int(os.environ.get('PORT', 10000))
+    print(f"Flask后端服务已启动，监听 {host}:{port} ...")
     print("连接到Neon PostgreSQL数据库")
-    print("访问 http://localhost:4001 查看完整应用")
-    app.run(debug=True, port=5000)
+    app.run(debug=True, host=host, port=port)

@@ -18,7 +18,10 @@ const typeMap = {
 };
 
 // 本地服务器地址
-const API_BASE_URL = 'https://freelancesnail-data-api.onrender.com';
+const API_BASE_URL =
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:10000'
+    : 'https://freelancesnail-data-api.onrender.com';
 
 // DOM元素
 const portfolioSelector = document.getElementById('portfolio-selector');
