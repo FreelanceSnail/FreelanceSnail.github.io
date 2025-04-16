@@ -38,7 +38,7 @@ async function getPassword(forcePrompt=false) {
       pwd = prompt('请输入持仓管理密码：');
       if (pwd === null) {
         // 用户点了取消，返回上一页
-        history.back();
+        history.go(-2);
         return null;
       }
       if (!pwd) continue; // 空密码，继续弹窗
