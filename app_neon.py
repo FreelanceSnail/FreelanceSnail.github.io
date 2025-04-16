@@ -19,7 +19,9 @@ app = Flask(__name__)
 ALLOWED_ORIGINS = [
     "https://freelancesnail.github.io",  # 你的GitHub Pages域名
     "http://localhost:4000",            # 本地开发前端
-    "http://127.0.0.1:4000"             # 本地开发前端
+    "http://127.0.0.1:4000",            # 本地开发前端
+    "http://localhost:4001",            # 本地开发前端
+    "http://127.0.0.1:4001"             # 本地开发前端
 ]
 CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGINS}}, supports_credentials=True)
 
