@@ -14,51 +14,53 @@ NEON_PASSWORD = os.environ.get('NEON_PASSWORD', '')
 
 class PortfolioManager:
     def __init__(self):
-        self.conn = None
+        pass  # 不再保存 self.conn
 
-    def get_db_connection(self):
-        """创建到Neon PostgreSQL的数据库连接"""
+    def init_db(self):
+        """初始化数据库，创建 holdings 表（如果不存在）"""
         if not all([NEON_HOST, NEON_DB, NEON_USER, NEON_PASSWORD]):
             raise ValueError("数据库连接信息不完整")
-        self.conn = psycopg2.connect(
+        with psycopg2.connect(
             host=NEON_HOST,
             port=NEON_PORT,
             dbname=NEON_DB,
             user=NEON_USER,
             password=NEON_PASSWORD,
             sslmode='require'
-        )
-        self.conn.autocommit = True
-
-    def init_db(self):
-        """初始化数据库，创建 holdings 表（如果不存在）"""
-        if not self.conn:
-            self.get_db_connection()
-        cursor = self.conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS holdings (
-                id SERIAL PRIMARY KEY,
-                symbol VARCHAR(32) NOT NULL,
-                current_price FLOAT,
-                preclose_price FLOAT,
-                updated_at TIMESTAMP
-            )
-        ''')
-        cursor.close()
+        ) as conn:
+            conn.autocommit = True
+            with conn.cursor() as cursor:
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS holdings (
+                        id SERIAL PRIMARY KEY,
+                        symbol VARCHAR(32) NOT NULL,
+                        current_price FLOAT,
+                        preclose_price FLOAT,
+                        updated_at TIMESTAMP
+                    )
+                ''')
 
     def read_holdings(self) -> List[Dict]:
         """读取当前持仓信息，并返回前端需要的字段格式"""
-        if not self.conn:
-            self.get_db_connection()
-        cursor = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute('SELECT * FROM holdings')
-        rows = cursor.fetchall()
-        result = []
-        for row in rows:
-            result.append({
-                'objectId': row.get('id'),
-                'symbol': row.get('symbol'),
-                'name': row.get('name'),
+        if not all([NEON_HOST, NEON_DB, NEON_USER, NEON_PASSWORD]):
+            raise ValueError("数据库连接信息不完整")
+        with psycopg2.connect(
+            host=NEON_HOST,
+            port=NEON_PORT,
+            dbname=NEON_DB,
+            user=NEON_USER,
+            password=NEON_PASSWORD,
+            sslmode='require'
+        ) as conn:
+            with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+                cursor.execute('SELECT * FROM holdings')
+                rows = cursor.fetchall()
+                result = []
+                for row in rows:
+                    result.append({
+                        'objectId': row.get('id'),
+                        'symbol': row.get('symbol'),
+                        'name': row.get('name'),
                 'type': row.get('type'),
                 'current_price': row.get('current_price'),
                 'preclose_price': row.get('preclose_price'),
