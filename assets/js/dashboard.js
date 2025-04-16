@@ -30,11 +30,36 @@ const dailyProfitElement = document.getElementById('daily-profit');
 const assetAllocationChart = document.getElementById('asset-allocation-chart');
 const overviewTitleElement = document.getElementById('overview-title');
 
+// 密码管理与弹窗
+async function getPassword(forcePrompt=false) {
+  while (true) {
+    let pwd = sessionStorage.getItem('portfolio_pwd');
+    if (!pwd || forcePrompt) {
+      pwd = prompt('请输入持仓管理密码：');
+      if (pwd === null) {
+        // 用户点了取消，返回上一页
+        history.back();
+        return null;
+      }
+      if (!pwd) continue; // 空密码，继续弹窗
+      sessionStorage.setItem('portfolio_pwd', pwd);
+    }
+    return pwd;
+  }
+}
+
 // 页面加载完成后执行
+// 绑定刷新按钮事件
+// 首次弹窗输入密码
+
 document.addEventListener('DOMContentLoaded', () => {
-  // 获取持仓数据
+  // 绑定刷新价格按钮
+  const refreshBtn = document.getElementById('refresh-prices-btn');
+  if (refreshBtn) {
+    refreshBtn.onclick = refreshPrices;
+  }
+  // 获取持仓数据（弹窗密码）
   fetchHoldings();
-  
   // 初始化图表
   initCharts();
 });
@@ -42,38 +67,38 @@ document.addEventListener('DOMContentLoaded', () => {
 // 从本地服务器获取持仓数据
 async function fetchHoldings() {
   try {
+    let password = await getPassword();
+    if (!password) return;
+
     const response = await fetch(`${API_BASE_URL}/api/holdings`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({}) // 发送空的JSON对象作为请求体
+      body: JSON.stringify({ password })
     });
-    
+    if (response.status === 401) {
+      sessionStorage.removeItem('portfolio_pwd');
+      alert('密码错误，请重试！');
+      return fetchHoldings();
+    }
     if (!response.ok) {
       throw new Error(`HTTP错误 ${response.status}`);
     }
-    
     const data = await response.json();
     holdingsData = data.results;
-    
-    // 提取投资组合和资产类型
     portfolios.clear();
     assetTypes.clear();
-    
     holdingsData.forEach(holding => {
       portfolios.add(holding.portfolio);
       assetTypes.add(holding.type);
     });
-    
-    // 更新UI
     updatePortfolioFilter();
     updateTypeFilter();
     renderHoldingsTable();
     updatePerformanceSummary();
     updateOverviewTitle();
     updateCharts();
-    
   } catch (error) {
     console.error('获取持仓数据失败:', error);
     holdingsTable.innerHTML = `<tr><td colspan=\"8\" class=\"text-center text-danger\">获取数据失败: ${error.message}</td></tr>`;
@@ -88,6 +113,26 @@ async function fetchHoldings() {
     updateCharts();
   }
 }
+
+// 刷新价格按钮
+async function refreshPrices() {
+  const password = await getPassword(true);
+  if (!password) return;
+  let res = await fetch(`${API_BASE_URL}/api/refresh_prices`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password })
+  });
+  if (res.status === 401) {
+    sessionStorage.removeItem('portfolio_pwd');
+    alert('密码错误，无法刷新价格！');
+    return;
+  }
+  let data = await res.json();
+  alert(data.message || '刷新完成');
+  fetchHoldings();
+}
+
 
 
 // 更新投资组合过滤器
