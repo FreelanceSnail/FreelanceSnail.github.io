@@ -200,19 +200,31 @@ function updateTypeFilter() {
 function renderHoldingsTable(data) {
   const arr = data || holdingsData;
   if (!arr.length) {
-    holdingsTable.innerHTML = '<tr><td colspan="8" class="text-center">没有符合条件的持仓</td></tr>';
+    holdingsTable.innerHTML = '<tr><td colspan="13" class="text-center">没有符合条件的持仓</td></tr>';
     return;
   }
+  // 为表格容器添加滚动条样式
+  holdingsTable.parentElement.style.maxHeight = '500px';
+  holdingsTable.parentElement.style.overflowY = 'auto';
+  holdingsTable.parentElement.style.display = 'block';
   // 生成表格内容
   let html = '';
   arr.forEach(holding => {
     const currentPrice = holding.current_price || 0;
     const costPrice = holding.avg_price || 0;
     const quantity = holding.quantity || 0;
+    const prevClose = holding.preclose_price || 0;
     
     // 计算盈亏
     const profit = (currentPrice - costPrice) * quantity;
     const profitPercent = costPrice > 0 ? (currentPrice / costPrice - 1) * 100 : 0;
+    const dailyProfit = (currentPrice - prevClose) * quantity;
+    
+    // 统一成本计算公式
+    const cost = costPrice * quantity * (holding.point_value || 1) * (holding.margin_ratio || 1);
+      
+    const marketValue = holding.type === 'future' ? cost + profit : currentPrice * quantity;
+    const riskExposure = marketValue / (parseFloat(document.getElementById('total-assets').textContent.replace(/[^0-9.]/g, '')) || 1) * 100;
     
     // 使用全局typeMap获取类型名称
     const typeName = typeMap[holding.type] || holding.type;
@@ -227,17 +239,23 @@ function renderHoldingsTable(data) {
     
     // 设置盈亏的颜色
     const profitClass = profit > 0 ? 'text-success' : (profit < 0 ? 'text-danger' : '');
+    const dailyProfitClass = dailyProfit > 0 ? 'text-success' : (dailyProfit < 0 ? 'text-danger' : '');
     
     html += `
-      <tr>
+      <tr style="white-space: nowrap;">
         <td>${holding.symbol || '-'}</td>
         <td>${holding.name || '-'}</td>
         <td>${typeName}</td>
+        <td>${holding.portfolio || '-'}</td>
         <td>${formatNumber(quantity)}</td>
         <td>${formatNumber(costPrice)}</td>
+        <td>${formatNumber(prevClose)}</td>
         <td>${formatNumber(currentPrice)}</td>
+        <td>${formatNumber(marketValue)}</td>
+        <td class="${dailyProfitClass}">${formatNumber(dailyProfit)}</td>
         <td class="${profitClass}">${formatNumber(profit)}</td>
-        <td class="${profitClass}">${profitPercent.toFixed(2)}%</td>
+        <td>${riskExposure.toFixed(2)}%</td>
+        <td>${formatNumber(cost)}</td>
       </tr>
     `;
   });

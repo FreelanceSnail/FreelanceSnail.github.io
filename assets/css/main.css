@@ -47,6 +47,40 @@ main {
 
 #holdings-table th {
   font-weight: 600;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 15;
+}
+
+#holdings-table td:first-child,
+#holdings-table th:first-child,
+#holdings-table td:nth-child(2),
+#holdings-table th:nth-child(2) {
+  position: sticky;
+  left: 0;
+  background: white;
+}
+
+#holdings-table td:nth-child(2),
+#holdings-table th:nth-child(2) {
+  left: 80px;
+}
+
+#holdings-table td:first-child,
+#holdings-table td:nth-child(2) {
+  z-index: 15;
+}
+
+#holdings-table th:first-child,
+#holdings-table th:nth-child(2) {
+  z-index: 20;
+}
+
+
+.table-responsive {
+  overflow: auto;
+  max-height: 600px;
 }
 
 #performance-summary {
@@ -71,4 +105,4 @@ main {
   .dashboard-container .col-md-3 {
     margin-bottom: 1.5rem;
   }
-} 
+}
