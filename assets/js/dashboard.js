@@ -37,9 +37,8 @@ async function getPassword(forcePrompt=false) {
     if (!pwd || forcePrompt) {
       pwd = prompt('请输入持仓管理密码：');
       if (pwd === null) {
-        // 用户点了取消，跳转回入口页面
-        const entryUrl = sessionStorage.getItem('portfolio_entry_url') || '/';
-        location.href = entryUrl;
+        // 用户点了取消，返回上一页
+        history.back();
         return null;
       }
       if (!pwd) continue; // 空密码，继续弹窗
@@ -52,12 +51,7 @@ async function getPassword(forcePrompt=false) {
 // 页面加载完成后执行
 // 绑定刷新按钮事件
 // 首次弹窗输入密码
-
 document.addEventListener('DOMContentLoaded', () => {
-  // 只保存一次入口页面 URL
-  if (!sessionStorage.getItem('portfolio_entry_url')) {
-    sessionStorage.setItem('portfolio_entry_url', document.referrer || '/');
-  }
   // 绑定刷新价格按钮
   const refreshBtn = document.getElementById('refresh-prices-btn');
   if (refreshBtn) {
@@ -71,51 +65,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 从本地服务器获取持仓数据
 async function fetchHoldings() {
-  try {
+  while (true) {
     let password = await getPassword();
-    if (!password) return;
+    if (!password) return; // 用户取消，直接退出
 
-    const response = await fetch(`${API_BASE_URL}/api/holdings`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ password })
-    });
-    if (response.status === 401) {
-      sessionStorage.removeItem('portfolio_pwd');
-      alert('密码错误，请重试！');
-      return fetchHoldings();
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/holdings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ password })
+      });
+
+      if (response.status === 401) {
+        sessionStorage.removeItem('portfolio_pwd');
+        alert('密码错误，请重试！');
+        continue; // 继续循环，重新弹窗
+      }
+      if (!response.ok) {
+        throw new Error(`HTTP错误 ${response.status}`);
+      }
+
+      const data = await response.json();
+      holdingsData = data.results;
+      portfolios.clear();
+      assetTypes.clear();
+      holdingsData.forEach(holding => {
+        portfolios.add(holding.portfolio);
+        assetTypes.add(holding.type);
+      });
+      updatePortfolioFilter();
+      updateTypeFilter();
+      renderHoldingsTable();
+      updatePerformanceSummary();
+      updateOverviewTitle();
+      updateCharts();
+      break; // 成功获取数据，跳出循环
+    } catch (error) {
+      console.error('获取持仓数据失败:', error);
+      holdingsTable.innerHTML = `<tr><td colspan=\"8\" class=\"text-center text-danger\">获取数据失败: ${error.message}</td></tr>`;
+      holdingsData = [];
+      portfolios.clear();
+      assetTypes.clear();
+      updatePortfolioFilter();
+      updateTypeFilter();
+      renderHoldingsTable();
+      updatePerformanceSummary();
+      updateOverviewTitle();
+      updateCharts();
+      break; // 网络或其他错误，直接退出
     }
-    if (!response.ok) {
-      throw new Error(`HTTP错误 ${response.status}`);
-    }
-    const data = await response.json();
-    holdingsData = data.results;
-    portfolios.clear();
-    assetTypes.clear();
-    holdingsData.forEach(holding => {
-      portfolios.add(holding.portfolio);
-      assetTypes.add(holding.type);
-    });
-    updatePortfolioFilter();
-    updateTypeFilter();
-    renderHoldingsTable();
-    updatePerformanceSummary();
-    updateOverviewTitle();
-    updateCharts();
-  } catch (error) {
-    console.error('获取持仓数据失败:', error);
-    holdingsTable.innerHTML = `<tr><td colspan=\"8\" class=\"text-center text-danger\">获取数据失败: ${error.message}</td></tr>`;
-    holdingsData = [];
-    portfolios.clear();
-    assetTypes.clear();
-    updatePortfolioFilter();
-    updateTypeFilter();
-    renderHoldingsTable();
-    updatePerformanceSummary();
-    updateOverviewTitle();
-    updateCharts();
   }
 }
 
