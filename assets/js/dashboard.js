@@ -37,8 +37,9 @@ async function getPassword(forcePrompt=false) {
     if (!pwd || forcePrompt) {
       pwd = prompt('请输入持仓管理密码：');
       if (pwd === null) {
-        // 用户点了取消，返回上一页
-        history.go(-2);
+        // 用户点了取消，跳转回入口页面
+        const entryUrl = sessionStorage.getItem('portfolio_entry_url') || '/';
+        location.href = entryUrl;
         return null;
       }
       if (!pwd) continue; // 空密码，继续弹窗
@@ -53,6 +54,10 @@ async function getPassword(forcePrompt=false) {
 // 首次弹窗输入密码
 
 document.addEventListener('DOMContentLoaded', () => {
+  // 只保存一次入口页面 URL
+  if (!sessionStorage.getItem('portfolio_entry_url')) {
+    sessionStorage.setItem('portfolio_entry_url', document.referrer || '/');
+  }
   // 绑定刷新价格按钮
   const refreshBtn = document.getElementById('refresh-prices-btn');
   if (refreshBtn) {
