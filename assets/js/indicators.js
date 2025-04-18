@@ -18,6 +18,7 @@
   }
 
   function renderIndicators(data) {
+    console.log('fetchIndicators got data:', data);
     // 1. 期货贴水表格
     let futuresRows = data.futures_discount.map(item =>
       `<tr><td>${item.contract}</td><td>${item.spot}</td><td>${item.future}</td><td>${item.discount}</td><td>${item.discount_rate}%</td></tr>`
@@ -86,6 +87,7 @@
 
     // innerHTML赋值后再初始化ECharts
     // 风险平价饼图
+    console.log('risk_parity in renderIndicators:', data.risk_parity);
     const pieDom = document.getElementById('riskParityPie');
     if (pieDom && typeof echarts !== 'undefined') {
       const pieChart = echarts.init(pieDom);
