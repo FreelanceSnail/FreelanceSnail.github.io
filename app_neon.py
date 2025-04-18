@@ -124,6 +124,36 @@ def refresh_prices():
 def serve_static(path):
     return send_from_directory('.', path)
 
+# 指标数据接口
+@app.route('/api/indicators', methods=['GET'])
+def get_indicators():
+    """返回四类指标的模拟数据，供前端渲染"""
+    data = {
+        "futures_discount": [
+            {"contract": "IF当月", "spot": 4000, "future": 3990, "discount": -10, "discount_rate": -0.25},
+            {"contract": "IF次月", "spot": 4000, "future": 3985, "discount": -15, "discount_rate": -0.38},
+            {"contract": "IF当季", "spot": 4000, "future": 3970, "discount": -30, "discount_rate": -0.75},
+            {"contract": "IF次季", "spot": 4000, "future": 3960, "discount": -40, "discount_rate": -1.00}
+        ],
+        "index_ratio": {
+            "hs300": 4000,
+            "csi1000": 6000,
+            "ratio": 0.6667
+        },
+        "risk_parity": [
+            {"asset": "股票", "weight": 0.35},
+            {"asset": "债券", "weight": 0.40},
+            {"asset": "商品", "weight": 0.15},
+            {"asset": "黄金", "weight": 0.10}
+        ],
+        "momentum_etf": [
+            {"code": "510300", "name": "沪深300ETF", "chg21": 2.1, "chg22": 2.3, "chg23": 2.5, "chg24": 2.8},
+            {"code": "159919", "name": "中证500ETF", "chg21": 1.8, "chg22": 2.0, "chg23": 2.2, "chg24": 2.4},
+            {"code": "512100", "name": "中证1000ETF", "chg21": 2.9, "chg22": 3.1, "chg23": 3.0, "chg24": 2.7}
+        ]
+    }
+    return jsonify(data)
+
 # 首页路由
 @app.route('/')
 def index():
@@ -131,7 +161,8 @@ def index():
         'status': 'success',
         'message': 'Flask API服务运行正常 (Neon PostgreSQL版)',
         'endpoints': [
-            '/api/holdings - 获取所有持仓数据'
+            '/api/holdings - 获取所有持仓数据',
+            '/api/indicators - 获取指标模拟数据'
         ]
     })
 
