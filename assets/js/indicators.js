@@ -174,15 +174,15 @@
       // 请求失败时使用完整模拟数据
       console.warn('使用模拟数据:', e.message);
       renderIndicators({
-        futures_discount: [],
+        futures_discount: data.futures_discount,
         index_ratio: {
           hs300: 3500,
           csi1000: 6200,
           ratio: (3500/6200).toFixed(3), // 表格显示字符串通常没问题
           history: generateMockHistoryData() // 现在会返回正确的数字类型数据
         },
-        risk_parity: [],
-        momentum_etf: []
+        risk_parity: data.risk_parity,
+        momentum_etf: data.momentum_etf
       });
     }
   }

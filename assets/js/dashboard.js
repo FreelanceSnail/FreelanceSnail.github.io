@@ -33,12 +33,121 @@ const dailyProfitElement = document.getElementById('daily-profit');
 const assetAllocationChart = document.getElementById('asset-allocation-chart');
 const overviewTitleElement = document.getElementById('overview-title');
 
-// 密码管理与弹窗
+// 自定义密码输入弹窗，输入内容星号显示
+function passwordPrompt(message) {
+  return new Promise((resolve) => {
+    // 遮罩层
+    const mask = document.createElement('div');
+    mask.style.position = 'fixed';
+    mask.style.left = 0;
+    mask.style.top = 0;
+    mask.style.width = '100vw';
+    mask.style.height = '100vh';
+    mask.style.background = 'rgba(0,0,0,0.25)';
+    mask.style.zIndex = 9999;
+
+    // 弹窗
+    const dialog = document.createElement('div');
+    dialog.style.position = 'fixed';
+    dialog.style.left = '50%';
+    dialog.style.top = '80px'; // 距离顶部80px
+    dialog.style.transform = 'translateX(-50%)';
+    dialog.style.background = '#fff';
+    dialog.style.padding = '32px 28px 24px 28px';
+    dialog.style.borderRadius = '12px';
+    dialog.style.boxShadow = '0 4px 24px rgba(0,0,0,0.15)';
+    dialog.style.textAlign = 'center';
+    dialog.style.minWidth = '320px';
+    dialog.style.maxWidth = '90vw';
+    dialog.style.fontFamily = 'system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif';
+
+    const msg = document.createElement('div');
+    msg.textContent = message;
+    msg.style.marginBottom = '16px';
+    msg.style.fontSize = '1.08em';
+    msg.style.color = '#222';
+
+    const input = document.createElement('input');
+    input.type = 'password';
+    input.style.width = '100%';
+    input.style.padding = '10px';
+    input.style.marginBottom = '18px';
+    input.style.fontSize = '1em';
+    input.style.border = '1px solid #d0d7de';
+    input.style.borderRadius = '6px';
+    input.style.outline = 'none';
+    input.style.boxSizing = 'border-box';
+    input.style.transition = 'border-color 0.2s';
+    input.onfocus = () => { input.style.borderColor = '#409eff'; };
+    input.onblur = () => { input.style.borderColor = '#d0d7de'; };
+
+    const btnRow = document.createElement('div');
+    btnRow.style.display = 'flex';
+    btnRow.style.justifyContent = 'center';
+    btnRow.style.gap = '12px';
+
+    const okBtn = document.createElement('button');
+    okBtn.textContent = '确定';
+    okBtn.style.background = '#409eff';
+    okBtn.style.color = '#fff';
+    okBtn.style.border = 'none';
+    okBtn.style.padding = '8px 24px';
+    okBtn.style.borderRadius = '5px';
+    okBtn.style.fontSize = '1em';
+    okBtn.style.cursor = 'pointer';
+    okBtn.style.boxShadow = '0 1px 2px rgba(64,158,255,0.07)';
+    okBtn.onmouseenter = () => { okBtn.style.background = '#357ae8'; };
+    okBtn.onmouseleave = () => { okBtn.style.background = '#409eff'; };
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = '取消';
+    cancelBtn.style.background = '#f5f5f5';
+    cancelBtn.style.color = '#333';
+    cancelBtn.style.border = 'none';
+    cancelBtn.style.padding = '8px 24px';
+    cancelBtn.style.borderRadius = '5px';
+    cancelBtn.style.fontSize = '1em';
+    cancelBtn.style.cursor = 'pointer';
+    cancelBtn.onmouseenter = () => { cancelBtn.style.background = '#e0e0e0'; };
+    cancelBtn.onmouseleave = () => { cancelBtn.style.background = '#f5f5f5'; };
+
+    btnRow.appendChild(okBtn);
+    btnRow.appendChild(cancelBtn);
+
+    dialog.appendChild(msg);
+    dialog.appendChild(input);
+    dialog.appendChild(btnRow);
+    mask.appendChild(dialog);
+    document.body.appendChild(mask);
+
+    // 事件
+    okBtn.onclick = () => {
+      const val = input.value;
+      cleanup();
+      resolve(val);
+    };
+    cancelBtn.onclick = () => {
+      cleanup();
+      resolve(null);
+    };
+    input.onkeydown = (e) => {
+      if (e.key === 'Enter') okBtn.onclick();
+      if (e.key === 'Escape') cancelBtn.onclick();
+    };
+    input.focus();
+
+    function cleanup() {
+      document.body.removeChild(mask);
+    }
+  });
+}
+
+// 密码管理与弹窗（支持密码星号显示）
 async function getPassword(forcePrompt=false) {
   while (true) {
     let pwd = sessionStorage.getItem('portfolio_pwd');
     if (!pwd || forcePrompt) {
-      pwd = prompt('请输入持仓管理密码：');
+      pwd = await passwordPrompt('请输入持仓管理密码：');
       if (pwd === null) {
         // 用户点了取消，返回上一页
         history.back();
