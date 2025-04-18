@@ -165,9 +165,9 @@
       const data = await resp.json();
       
       // 开发模式自动注入模拟数据
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        data.index_ratio.history = generateMockHistoryData();
-      }
+      //if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      data.index_ratio.history = generateMockHistoryData();
+      //}
       
       renderIndicators(data);
     } catch (e) {
