@@ -4,25 +4,27 @@ title: 关于
 permalink: /about/
 ---
 
-AIA（AIA Investment Assistant）是一个资产投资助手应用，旨在帮助投资者更好地管理投资组合、分析风险和追踪投资策略。
+蜗牛自由生活馆
 
 ## 功能
 
 - **博客功能**：分享投资心得和开发进展
-- **持仓管理**：查看和分析投资组合数据
-- **风险管理**：（即将推出）
-- **指标管理**：（即将推出）
-- **策略管理**：（即将推出）
+- **AIA持仓分析**：查看和分析投资组合数据
+- **AIA量化看板**：查看和分析量化指标数据
 
 ## 技术栈
 
 AIA基于以下技术构建：
-- **GitHub Pages** - 托管和部署
+- **GitHub Pages** - 前台部署和托管
 - **Jekyll** - 静态网站生成
 - **Bootstrap** - 前端界面
-- **LeanCloud** - 数据存储和API
+- **Render** - 后台部署和托管
+- **Neon** - 数据云端存储和访问
 - **Chart.js** - 数据可视化
 
 ## 联系我
 
 如有任何问题或建议，请随时与我联系。
+
+- **邮箱**：[lyuxueji@qq.com](mailto:lyuxueji@qq.com)
+- **Github**: [FreelanceSnail](https://github.com/FreelanceSnail)

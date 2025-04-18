@@ -1,5 +1,5 @@
 ---
 layout: indicators
-title: 指标管理
+title: AIA量化看板
 permalink: /indicators/
 ---

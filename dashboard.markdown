@@ -1,6 +1,6 @@
 ---
 layout: dashboard
-title: 持仓管理
+title: AIA持仓分析
 permalink: /dashboard/
 custom_js:
   - dashboard
