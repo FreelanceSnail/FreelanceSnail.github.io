@@ -1,5 +1,6 @@
 /* 全局样式 */
 body {
+  font-size: 15px; /* 调整正文基础字号 */
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -77,7 +78,6 @@ main {
   z-index: 20;
 }
 
-
 .table-responsive {
   overflow: auto;
   max-height: 600px;
@@ -98,6 +98,20 @@ main {
   border-bottom: none;
   margin-bottom: 0;
   padding-bottom: 0;
+}
+
+/* 博客标题字号调整 */
+h1 {
+  font-size: 1.7em; /* 原则上约27px，适当缩小 */
+}
+h2 {
+  font-size: 1.4em; /* 约22px */
+}
+h3 {
+  font-size: 1.15em; /* 约17px */
+}
+p, article {
+  font-size: 1em; /* 正文 15px */
 }
 
 /* 响应式调整 */

@@ -7,8 +7,6 @@ cover_image: /assets/images/technical.svg
 summary: 掌握关键技术分析工具
 ---
 
-# 五大技术指标助力投资决策
-
 技术分析是投资决策中的重要工具，而技术指标则是技术分析的核心。本文将介绍五个常用的技术指标及其应用。
 
 ## 移动平均线（Moving Average）
