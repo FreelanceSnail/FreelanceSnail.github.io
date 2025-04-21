@@ -21,16 +21,16 @@ call bundle install
 
 REM 创建两个窗口分别启动Jekyll和Flask服务
 echo 正在启动Jekyll服务...
-start "Jekyll前端服务" cmd /k "cd /d "%~dp0" && chcp 65001 > nul && echo 正在启动Jekyll服务(端口4001)... && bundle exec jekyll serve --port 4001"
+start "Jekyll前端服务" cmd /k "cd /d "%~dp0" && chcp 65001 > nul && echo 正在启动Jekyll服务(端口4000)... && bundle exec jekyll serve --port 4000"
 
 echo 正在启动Flask服务(不导入CSV数据)...
 start "Flask后端服务" cmd /k "cd /d "%~dp0" && chcp 65001 > nul && echo 正在启动Flask服务... && python app_neon.py"
 
 echo 服务启动完成！
-echo Jekyll前端服务地址: http://localhost:4001
+echo Jekyll前端服务地址: http://localhost:4000
 echo Flask后端服务地址: http://localhost:5000
 echo.
-echo 请在浏览器中访问: http://localhost:4001
+echo 请在浏览器中访问: http://localhost:4000
 echo.
 echo 按任意键退出...
 pause > nul 
