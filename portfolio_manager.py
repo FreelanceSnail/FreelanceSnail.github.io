@@ -12,71 +12,136 @@ NEON_DB = os.environ.get('NEON_DB', '')
 NEON_USER = os.environ.get('NEON_USER', '')
 NEON_PASSWORD = os.environ.get('NEON_PASSWORD', '')
 
+import os
+import psycopg2
+import sqlite3
+
 class PortfolioManager:
-    def __init__(self):
-        pass  # 不再保存 self.conn
+    def __init__(self, db_type='postgres', sqlite_path='portfolio.db'):
+        self.db_type = db_type  # 'postgres' or 'sqlite'
+        self.sqlite_path = sqlite_path
+
+    def get_connection(self):
+        if self.db_type == 'sqlite':
+            conn = sqlite3.connect(self.sqlite_path)
+            conn.row_factory = sqlite3.Row  # dict-like access
+            return conn
+        else:
+            return psycopg2.connect(
+                host=NEON_HOST,
+                port=NEON_PORT,
+                dbname=NEON_DB,
+                user=NEON_USER,
+                password=NEON_PASSWORD,
+                sslmode='require'
+            )
 
     def init_db(self):
-        """初始化数据库，创建 holdings 表（如果不存在）"""
-        if not all([NEON_HOST, NEON_DB, NEON_USER, NEON_PASSWORD]):
-            raise ValueError("数据库连接信息不完整")
-        with psycopg2.connect(
-            host=NEON_HOST,
-            port=NEON_PORT,
-            dbname=NEON_DB,
-            user=NEON_USER,
-            password=NEON_PASSWORD,
-            sslmode='require'
-        ) as conn:
-            conn.autocommit = True
-            with conn.cursor() as cursor:
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS holdings (
-                        id SERIAL PRIMARY KEY,
-                        symbol TEXT,
-                        name TEXT,
-                        type TEXT,
-                        current_price NUMERIC,
-                        preclose_price NUMERIC,
-                        account TEXT,
-                        portfolio TEXT,
-                        quantity NUMERIC,
-                        avg_price NUMERIC,
-                        exchange NUMERIC,
-                        margin_ratio NUMERIC,
-                        point_value NUMERIC,
-                        target_symbol TEXT,
-                        created_at TEXT,
-                        updated_at TEXT,
-                        market_value_rate NUMERIC DEFAULT 0,
-                        risk_exposure_rate NUMERIC DEFAULT 0,
-                        market_value NUMERIC DEFAULT 0,
-                        risk_exposure NUMERIC DEFAULT 0,
-                        style TEXT,
-                        cost NUMERIC,
-                        delta NUMERIC,
-                        profit NUMERIC,
-                        daily_profit NUMERIC,
-                        target_symbol_point NUMERIC,
-                        target_symbol_pct NUMERIC
-                    )
-                ''')
+        if self.db_type == 'sqlite':
+            create_sql = '''
+                CREATE TABLE IF NOT EXISTS holdings (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    symbol TEXT,
+                    name TEXT,
+                    type TEXT,
+                    current_price REAL,
+                    preclose_price REAL,
+                    account TEXT,
+                    portfolio TEXT,
+                    quantity REAL,
+                    avg_price REAL,
+                    exchange REAL,
+                    margin_ratio REAL,
+                    point_value REAL,
+                    target_symbol TEXT,
+                    created_at TEXT,
+                    updated_at TEXT,
+                    market_value_rate REAL DEFAULT 0,
+                    risk_exposure_rate REAL DEFAULT 0,
+                    market_value REAL DEFAULT 0,
+                    risk_exposure REAL DEFAULT 0,
+                    style TEXT,
+                    cost REAL,
+                    delta REAL,
+                    profit REAL,
+                    daily_profit REAL,
+                    target_symbol_point REAL,
+                    target_symbol_pct REAL
+                )
+            '''
+        else:
+            if not all([NEON_HOST, NEON_DB, NEON_USER, NEON_PASSWORD]):
+                raise ValueError("数据库连接信息不完整")
+            create_sql = '''
+                CREATE TABLE IF NOT EXISTS holdings (
+                    id SERIAL PRIMARY KEY,
+                    symbol TEXT,
+                    name TEXT,
+                    type TEXT,
+                    current_price NUMERIC,
+                    preclose_price NUMERIC,
+                    account TEXT,
+                    portfolio TEXT,
+                    quantity NUMERIC,
+                    avg_price NUMERIC,
+                    exchange NUMERIC,
+                    margin_ratio NUMERIC,
+                    point_value NUMERIC,
+                    target_symbol TEXT,
+                    created_at TEXT,
+                    updated_at TEXT,
+                    market_value_rate NUMERIC DEFAULT 0,
+                    risk_exposure_rate NUMERIC DEFAULT 0,
+                    market_value NUMERIC DEFAULT 0,
+                    risk_exposure NUMERIC DEFAULT 0,
+                    style TEXT,
+                    cost NUMERIC,
+                    delta NUMERIC,
+                    profit NUMERIC,
+                    daily_profit NUMERIC,
+                    target_symbol_point NUMERIC,
+                    target_symbol_pct NUMERIC
+                )
+            '''
+        with self.get_connection() as conn:
+            c = conn.cursor()
+            c.execute(create_sql)
+            conn.commit()
+
 
     def read_holdings(self, safemode: bool = True) -> List[Dict]:
         """读取当前持仓信息，并返回前端需要的字段格式
         safemode=True 时只返回部分字段，False 时返回全部字段
         """
-        if not all([NEON_HOST, NEON_DB, NEON_USER, NEON_PASSWORD]):
-            raise ValueError("数据库连接信息不完整")
-        with psycopg2.connect(
-            host=NEON_HOST,
-            port=NEON_PORT,
-            dbname=NEON_DB,
-            user=NEON_USER,
-            password=NEON_PASSWORD,
-            sslmode='require'
-        ) as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+        result = []
+        with self.get_connection() as conn:
+            if self.db_type == 'postgres':
+                cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            else:
+                cursor = conn.cursor()
+            try:
+                if safemode:
+                    cursor.execute("SELECT id, symbol, name, type, current_price, preclose_price, account, portfolio, market_value_rate, risk_exposure_rate FROM holdings")
+                else:
+                    cursor.execute("SELECT * FROM holdings")
+                rows = cursor.fetchall()
+                for row in rows:
+                    # For both DBs, row can be accessed as dict (sqlite3.Row or DictCursor)
+                    result.append({
+                        'id': row['id'],
+                        'symbol': row['symbol'],
+                        'name': row['name'],
+                        'type': row['type'],
+                        'current_price': row['current_price'] or 0,
+                        'preclose_price': row['preclose_price'] or 0,
+                        'account': row['account'],
+                        'portfolio': row['portfolio'],
+                        'market_value_rate': row.get('market_value_rate', 0) or 0,
+                        'risk_exposure_rate': row.get('risk_exposure_rate', 0) or 0
+                    } if safemode else dict(row))
+                return result
+            finally:
+                cursor.close()
                 cursor.execute('SELECT * FROM holdings')
                 rows = cursor.fetchall()
                 result = []
@@ -200,15 +265,12 @@ class PortfolioManager:
             # 计算市值和风险比率
             # 优化：只建立一次数据库连接和游标
             try:
-                with psycopg2.connect(
-                    host=NEON_HOST,
-                    port=NEON_PORT,
-                    dbname=NEON_DB,
-                    user=NEON_USER,
-                    password=NEON_PASSWORD,
-                    sslmode='require'
-                ) as conn:
-                    with conn.cursor() as cursor:
+                with self.get_connection() as conn:
+                    if self.db_type == 'postgres':
+                        cursor = conn.cursor()
+                    else:
+                        cursor = conn.cursor()
+
                         for i, update_fields in enumerate(update_fields_list):
                             update_fields['market_value_rate'] = update_fields['market_value'] / total_mv if total_mv != 0 else 0
                             update_fields['risk_exposure_rate'] = update_fields['risk_exposure'] / total_risk if total_risk != 0 else 0
@@ -223,6 +285,7 @@ class PortfolioManager:
                             updated = dict(holdings[i])
                             updated.update(update_fields)
                             updated_data.append(updated)
+                    conn.commit()
                 return updated_data
             except Exception as e:
                 self.log_update_error(e)
