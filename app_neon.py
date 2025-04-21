@@ -107,7 +107,7 @@ def refresh_prices():
                 'message': '价格更新任务已在运行中'
             })
         # 启动后台线程执行价格更新
-        price_update_thread = threading.Thread(target=portfolio_manager.update_prices)
+        price_update_thread = threading.Thread(target=portfolio_manager.update_data, args=('akshare',))
         price_update_thread.start()
         return jsonify({
             'status': 'success',
@@ -117,6 +117,37 @@ def refresh_prices():
         return jsonify({
             'status': 'error',
             'message': f'价格更新任务启动失败: {str(e)}'
+        }), 500
+
+# 数据刷新路由（不拉取akshare，仅刷新本地数据）
+@app.route('/api/refresh_data', methods=['GET', 'POST'])
+def refresh_data():
+    global price_update_thread
+    password = ''
+    if request.method == 'POST':
+        data = request.get_json()
+        password = data.get('password', '') if data else ''
+    else:
+        password = request.args.get('password', '')
+    if password != PORTFOLIO_PASSWORD:
+        return jsonify({'error': '密码错误'}), 401
+    try:
+        import threading
+        if price_update_thread and price_update_thread.is_alive():
+            return jsonify({
+                'status': 'success',
+                'message': '数据刷新任务已在运行中'
+            })
+        price_update_thread = threading.Thread(target=portfolio_manager.update_data)
+        price_update_thread.start()
+        return jsonify({
+            'status': 'success',
+            'message': '数据刷新任务已开始'
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'数据刷新任务启动失败: {str(e)}'
         }), 500
 
 # 静态文件服务
