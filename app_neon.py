@@ -69,7 +69,8 @@ portfolio_manager.init_db()
 import os
 PORTFOLIO_PASSWORD = os.environ.get('PORTFOLIO_PASSWORD', '')
 
-@app.route('/api/holdings', methods=['POST', 'GET'])
+# 详细持仓数据接口
+@app.route('/api/holdings-detail', methods=['POST', 'GET'])
 def get_holdings():
     password = ''
     if request.method == 'POST':
@@ -79,7 +80,13 @@ def get_holdings():
         password = request.args.get('password', '')
     if password != PORTFOLIO_PASSWORD:
         return jsonify({'error': '密码错误'}), 401
-    return jsonify({'results': portfolio_manager.read_holdings()})
+    return jsonify({'results': portfolio_manager.read_holdings(safemode=False)})
+
+# 新增无需密码校验的 holdings 路由
+@app.route('/api/holdings', methods=['GET'])
+def get_holdings_safemode():
+    return jsonify({'results': portfolio_manager.read_holdings(safemode=True)})
+
 
 
 # 全局变量跟踪价格更新线程状态
