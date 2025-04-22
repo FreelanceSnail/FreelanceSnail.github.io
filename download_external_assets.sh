@@ -7,6 +7,8 @@ mkdir -p assets/fonts
 
 # 下载 Bootstrap CSS
 curl -L "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" -o assets/css/bootstrap.min.css
+# 下载 Bootstrap CSS Source Map
+curl -L "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css.map" -o assets/css/bootstrap.min.css.map
 
 # 下载 Bootstrap JS
 curl -L "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" -o assets/js/bootstrap.bundle.min.js
