@@ -149,8 +149,6 @@ async function getPassword(forcePrompt=false) {
     if (!pwd || forcePrompt) {
       pwd = await passwordPrompt('请输入持仓管理密码：');
       if (pwd === null) {
-        // 用户点了取消，返回上一页
-        history.back();
         return null;
       }
       if (!pwd) continue; // 空密码，继续弹窗
@@ -161,61 +159,90 @@ async function getPassword(forcePrompt=false) {
 }
 
 // 页面加载完成后执行
-// 绑定刷新按钮事件
-// 首次弹窗输入密码
+// 绑定刷新按钮和详细数据按钮事件
+// 默认加载简要持仓数据，无需密码
+
 document.addEventListener('DOMContentLoaded', () => {
   // 绑定刷新价格按钮
   const refreshBtn = document.getElementById('refresh-prices-btn');
   if (refreshBtn) {
     refreshBtn.onclick = refreshPrices;
   }
-  // 获取持仓数据（弹窗密码）
-  fetchHoldings();
+  // 绑定获取详细持仓按钮
+  const detailBtn = document.getElementById('holdings-detail-btn');
+  if (detailBtn) {
+    detailBtn.onclick = fetchHoldingsDetail;
+  }
+  // 默认获取简要持仓数据（无需密码）
+  fetchSimpleHoldings();
   // 初始化图表
   initCharts();
 });
 
 // 从本地服务器获取持仓数据
-async function fetchHoldings() {
+// 获取无需密码的简要持仓数据
+async function fetchSimpleHoldings() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/holdings`);
+    if (!response.ok) throw new Error('网络错误');
+    const data = await response.json();
+    const arr = Array.isArray(data) ? data : (Array.isArray(data.results) ? data.results : []);
+    if (!arr.length) throw new Error('接口返回格式错误: 没有数据');
+    holdingsData = arr;
+    portfolios = new Set(arr.map(item => item.portfolio));
+    assetTypes = new Set(arr.map(item => item.type));
+    updatePortfolioFilter();
+    updateTypeFilter();
+    renderHoldingsTable();
+    updatePerformanceSummary();
+    updateOverviewTitle();
+    updateCharts();
+  } catch (error) {
+    console.error('获取持仓数据失败:', error);
+    holdingsTable.innerHTML = `<tr><td colspan=\"8\" class=\"text-center text-danger\">获取数据失败: ${error.message}</td></tr>`;
+    holdingsData = [];
+    portfolios.clear();
+    assetTypes.clear();
+    updatePortfolioFilter();
+    updateTypeFilter();
+    renderHoldingsTable();
+    updatePerformanceSummary();
+    updateOverviewTitle();
+    updateCharts();
+  }
+}
+
+// 获取需要密码的详细持仓数据
+async function fetchHoldingsDetail() {
   while (true) {
     let password = await getPassword();
-    if (!password) return; // 用户取消，直接退出
-
+    if (!password) return; // 用户取消
     try {
-      const response = await fetch(`${API_BASE_URL}/api/holdings`, {
+      const response = await fetch(`${API_BASE_URL}/api/holdings-detail`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ password })
       });
-
       if (response.status === 401) {
         sessionStorage.removeItem('portfolio_pwd');
         alert('密码错误，请重试！');
-        continue; // 继续循环，重新弹窗
+        continue;
       }
-      if (!response.ok) {
-        throw new Error(`HTTP错误 ${response.status}`);
-      }
-
       const data = await response.json();
-      holdingsData = data.results;
-      portfolios.clear();
-      assetTypes.clear();
-      holdingsData.forEach(holding => {
-        portfolios.add(holding.portfolio);
-        assetTypes.add(holding.type);
-      });
+      holdingsData = data;
+      portfolios = new Set(data.map(item => item.portfolio));
+      assetTypes = new Set(data.map(item => item.type));
       updatePortfolioFilter();
       updateTypeFilter();
       renderHoldingsTable();
       updatePerformanceSummary();
       updateOverviewTitle();
       updateCharts();
-      break; // 成功获取数据，跳出循环
+      break;
     } catch (error) {
-      console.error('获取持仓数据失败:', error);
+      console.error('获取详细持仓数据失败:', error);
       holdingsTable.innerHTML = `<tr><td colspan=\"8\" class=\"text-center text-danger\">获取数据失败: ${error.message}</td></tr>`;
       holdingsData = [];
       portfolios.clear();
@@ -226,7 +253,7 @@ async function fetchHoldings() {
       updatePerformanceSummary();
       updateOverviewTitle();
       updateCharts();
-      break; // 网络或其他错误，直接退出
+      break;
     }
   }
 }
@@ -316,59 +343,91 @@ function renderHoldingsTable(data) {
   holdingsTable.parentElement.style.maxHeight = '500px';
   holdingsTable.parentElement.style.overflowY = 'auto';
   holdingsTable.parentElement.style.display = 'block';
+
+  // 字段定义
+  const simpleFields = [
+    { key: 'symbol', name: '代码' },
+    { key: 'name', name: '名称' },
+    { key: 'type', name: '类型' },
+    { key: 'portfolio', name: '账户' },
+    { key: 'current_price', name: '现价' },
+    { key: 'preclose_price', name: '前收' },
+    { key: 'market_value_rate', name: '市值占比(%)' },
+    { key: 'risk_exposure_rate', name: '风险敞口(%)' },
+    { key: 'style', name: '风格' }
+  ];
+  const detailFields = [
+    { key: 'symbol', name: '代码' },
+    { key: 'name', name: '名称' },
+    { key: 'type', name: '类型' },
+    { key: 'portfolio', name: '账户' },
+    { key: 'quantity', name: '数量' },
+    { key: 'avg_price', name: '成本价' },
+    { key: 'preclose_price', name: '前收' },
+    { key: 'current_price', name: '现价' },
+    { key: 'market_value', name: '市值' },
+    { key: 'daily_profit', name: '当日盈亏' },
+    { key: 'profit', name: '总盈亏' },
+    { key: 'risk_exposure', name: '风险敞口' },
+    { key: 'cost', name: '成本' },
+    { key: 'exchange', name: '交易所' },
+    { key: 'margin_ratio', name: '保证金比例' },
+    { key: 'point_value', name: '合约乘数' },
+    { key: 'target_symbol', name: '标的代码' },
+    { key: 'createdAt', name: '创建时间' },
+    { key: 'updatedAt', name: '更新时间' },
+    { key: 'market_value_rate', name: '市值占比(%)' },
+    { key: 'risk_exposure_rate', name: '风险敞口(%)' },
+    { key: 'style', name: '风格' },
+    { key: 'delta', name: 'Delta' },
+    { key: 'target_symbol_point', name: '标的点位' },
+    { key: 'target_symbol_pct', name: '标的比例' }
+  ];
+
+  // 判断是简要还是详细数据
+  const isDetail = arr[0].hasOwnProperty('quantity');
+  const fields = isDetail ? detailFields : simpleFields;
+
+  // 生成表头
+  let theadHtml = '<tr>' + fields.map(f => `<th>${f.name}</th>`).join('') + '</tr>';
+  holdingsTable.parentElement.parentElement.querySelector('thead').innerHTML = theadHtml;
+
   // 生成表格内容
   let html = '';
   arr.forEach(holding => {
-    const currentPrice = holding.current_price || 0;
-    const costPrice = holding.avg_price || 0;
-    const quantity = holding.quantity || 0;
-    const prevClose = holding.preclose_price || 0;
-    
-    // 计算盈亏
-    const profit = (currentPrice - costPrice) * quantity;
-    const profitPercent = costPrice > 0 ? (currentPrice / costPrice - 1) * 100 : 0;
-    const dailyProfit = (currentPrice - prevClose) * quantity;
-    
-    // 统一成本计算公式
-    const cost = costPrice * quantity * (holding.point_value || 1) * (holding.margin_ratio || 1);
-      
-    const marketValue = holding.type === 'future' ? cost + profit : currentPrice * quantity;
-    const riskExposure = marketValue / (parseFloat(document.getElementById('total-assets').textContent.replace(/[^0-9.]/g, '')) || 1) * 100;
-    
-    // 使用全局typeMap获取类型名称
-    const typeName = typeMap[holding.type] || holding.type;
-    
-    // 格式化数字
-    const formatNumber = (num) => {
-      return num.toLocaleString('zh-CN', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      });
-    };
-    
-    // 设置盈亏的颜色
-    const profitClass = profit > 0 ? 'text-success' : (profit < 0 ? 'text-danger' : '');
-    const dailyProfitClass = dailyProfit > 0 ? 'text-success' : (dailyProfit < 0 ? 'text-danger' : '');
-    
-    html += `
-      <tr style="white-space: nowrap;">
-        <td>${holding.symbol || '-'}</td>
-        <td>${holding.name || '-'}</td>
-        <td>${typeName}</td>
-        <td>${holding.portfolio || '-'}</td>
-        <td>${formatNumber(quantity)}</td>
-        <td>${formatNumber(costPrice)}</td>
-        <td>${formatNumber(prevClose)}</td>
-        <td>${formatNumber(currentPrice)}</td>
-        <td>${formatNumber(marketValue)}</td>
-        <td class="${dailyProfitClass}">${formatNumber(dailyProfit)}</td>
-        <td class="${profitClass}">${formatNumber(profit)}</td>
-        <td>${riskExposure.toFixed(2)}%</td>
-        <td>${formatNumber(cost)}</td>
-      </tr>
-    `;
+    html += '<tr style="white-space: nowrap;">';
+    fields.forEach(f => {
+      let val = holding[f.key];
+      // 类型名特殊处理
+      if (f.key === 'type') {
+        val = typeMap[val] || val || '-';
+      }
+      // 百分比字段特殊处理
+      else if (f.key === 'market_value_rate' || f.key === 'risk_exposure_rate') {
+        let num = Number(val);
+        if (!isNaN(num)) {
+          val = (num * 100).toFixed(2) + '%';
+        } else {
+          val = '-';
+        }
+      }
+      // 数字格式化
+      else if (typeof val === 'number') {
+        if (f.key === 'risk_exposure') {
+          val = val.toFixed(2);
+        } else {
+          val = val.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+      }
+      // 时间格式化
+      else if ((f.key === 'createdAt' || f.key === 'updatedAt') && val) {
+        val = String(val).replace('T', ' ').slice(0, 19);
+      }
+      if (val === undefined || val === null || val === '') val = '-';
+      html += `<td>${val}</td>`;
+    });
+    html += '</tr>';
   });
-  
   holdingsTable.innerHTML = html;
 }
 
