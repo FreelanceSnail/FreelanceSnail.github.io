@@ -231,9 +231,10 @@ async function fetchHoldingsDetail() {
         continue;
       }
       const data = await response.json();
-      holdingsData = data;
-      portfolios = new Set(data.map(item => item.portfolio));
-      assetTypes = new Set(data.map(item => item.type));
+      const arr = Array.isArray(data) ? data : (Array.isArray(data.results) ? data.results : []);
+      holdingsData = arr;
+      portfolios = new Set(arr.map(item => item.portfolio));
+      assetTypes = new Set(arr.map(item => item.type));
       updatePortfolioFilter();
       updateTypeFilter();
       renderHoldingsTable();
