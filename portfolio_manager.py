@@ -17,6 +17,12 @@ import psycopg2
 import sqlite3
 
 class PortfolioManager:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close_connection()
+
     def __init__(self, db_type='postgres', sqlite_path='portfolio.db'):
         self.db_type = db_type  # 'postgres' or 'sqlite'
         self.sqlite_path = sqlite_path
@@ -125,30 +131,12 @@ class PortfolioManager:
                 else:
                     cursor.execute("SELECT * FROM holdings")
                 rows = cursor.fetchall()
-                for row in rows:
-                    # For both DBs, row can be accessed as dict (sqlite3.Row or DictCursor)
-                    result.append({
-                        'id': row['id'],
-                        'symbol': row['symbol'],
-                        'name': row['name'],
-                        'type': row['type'],
-                        'current_price': row['current_price'] or 0,
-                        'preclose_price': row['preclose_price'] or 0,
-                        'account': row['account'],
-                        'portfolio': row['portfolio'],
-                        'market_value_rate': row.get('market_value_rate', 0) or 0,
-                        'risk_exposure_rate': row.get('risk_exposure_rate', 0) or 0
-                    } if safemode else dict(row))
-                return result
-            finally:
-                cursor.close()
-                cursor.execute('SELECT * FROM holdings')
-                rows = cursor.fetchall()
-                result = []
+                if self.db_type == 'sqlite':
+                    rows = [dict(row) for row in rows]
                 for row in rows:
                     if safemode:
                         result.append({
-                            'objectId': row.get('id'),
+                            'id': row.get('id'),
                             'symbol': row.get('symbol'),
                             'name': row.get('name'),
                             'type': row.get('type'),
@@ -162,7 +150,7 @@ class PortfolioManager:
                         })
                     else:
                         result.append({
-                            'objectId': row.get('id'),
+                            'id': row.get('id'),
                             'symbol': row.get('symbol'),
                             'name': row.get('name'),
                             'type': row.get('type'),
@@ -191,6 +179,8 @@ class PortfolioManager:
                             'target_symbol_pct': row.get('target_symbol_pct') or 0,
                         })
                 return result
+            finally:
+                cursor.close()
 
     def update_data(self, source: str = None) -> List[Dict]:
         """
@@ -199,9 +189,10 @@ class PortfolioManager:
         返回: 更新后的持仓数据列表
         """
         try:
-            if not all([NEON_HOST, NEON_DB, NEON_USER, NEON_PASSWORD]):
+            if self.db_type == 'postgres' and not all([NEON_HOST, NEON_DB, NEON_USER, NEON_PASSWORD]):
                 raise ValueError("数据库连接信息不完整")
             holdings = self.read_holdings(safemode=False)
+            import pdb; pdb.set_trace()
             if not holdings:
                 print("[INFO] 当前无持仓，无需更新数据。")
                 return []
@@ -242,19 +233,19 @@ class PortfolioManager:
                 current_price = float(update_fields['current_price'] or 0)
                 quantity = float(row['quantity'] or 0)
                 avg_price = float(row['avg_price'] or 0)
-                point_value = float(row['point_value'] or 1)
-                margin_ratio = float(row['margin_ratio'] or 1)
-                cost = avg_price * quantity * point_value * margin_ratio
+                update_fields['point_value'] = float(row['point_value'] or 1)
+                update_fields['margin_ratio'] = float(row['margin_ratio'] or 1)
+                cost = avg_price * quantity * update_fields['point_value'] * update_fields['margin_ratio']
                 update_fields['cost'] = cost
-                update_fields['profit'] = (current_price - avg_price) * quantity * point_value * margin_ratio
+                update_fields['profit'] = (current_price - avg_price) * quantity * update_fields['point_value']
                 update_fields['market_value'] = update_fields['profit'] + cost
                 
-                update_fields['daily_profit'] = (current_price - (update_fields['preclose_price'] or 0)) * quantity * point_value
+                update_fields['daily_profit'] = (current_price - float(update_fields['preclose_price'] or 0)) * quantity * update_fields['point_value']
                 # 风险敞口
                 if row['type'] == 'option':
-                    update_fields['risk_exposure'] = update_fields['target_symbol_point'] * quantity * point_value * update_fields['delta']
+                    update_fields['risk_exposure'] = update_fields['target_symbol_point'] * quantity * update_fields['point_value'] * update_fields['delta']
                 else:
-                    update_fields['risk_exposure'] = current_price * quantity * point_value * update_fields['delta']
+                    update_fields['risk_exposure'] = current_price * quantity * update_fields['point_value'] * update_fields['delta']
 
                 # 更新时间
                 update_fields['updated_at'] = now
@@ -275,8 +266,12 @@ class PortfolioManager:
                             update_fields['market_value_rate'] = update_fields['market_value'] / total_mv if total_mv != 0 else 0
                             update_fields['risk_exposure_rate'] = update_fields['risk_exposure'] / total_risk if total_risk != 0 else 0
                             # 组装 SQL
-                            set_clause = ', '.join([f"{k} = %s" for k in update_fields.keys()])
-                            sql = f"UPDATE holdings SET {set_clause} WHERE id = %s"
+                            if self.db_type == 'postgres':
+                                placeholder = '%s'
+                            else:
+                                placeholder = '?'
+                            set_clause = ', '.join([f"{k} = {placeholder}" for k in update_fields.keys()])
+                            sql = f"UPDATE holdings SET {set_clause} WHERE id = {placeholder}"
                             values = list(update_fields.values()) + [holdings[i]['id']]
                             try:
                                 cursor.execute(sql, values)
@@ -299,12 +294,12 @@ class PortfolioManager:
         print(f"[ERROR] {datetime.datetime.now()}: {str(error)}")
 
     def close_connection(self):
-        if self.conn:
+        if hasattr(self, 'conn') and self.conn:
             self.conn.close()
+            self.conn = None
 
 if __name__ == "__main__":
     # 仅用于本文件调试或命令行运行时的示例
-    portfolio_manager = PortfolioManager()
+    portfolio_manager = PortfolioManager(db_type='sqlite', sqlite_path='holdings.db')
     portfolio_manager.init_db()
-    portfolio_manager.update_prices()
-    portfolio_manager.close_connection()
+    portfolio_manager.update_data()
