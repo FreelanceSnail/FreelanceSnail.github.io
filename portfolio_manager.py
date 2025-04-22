@@ -192,7 +192,6 @@ class PortfolioManager:
             if self.db_type == 'postgres' and not all([NEON_HOST, NEON_DB, NEON_USER, NEON_PASSWORD]):
                 raise ValueError("数据库连接信息不完整")
             holdings = self.read_holdings(safemode=False)
-            import pdb; pdb.set_trace()
             if not holdings:
                 print("[INFO] 当前无持仓，无需更新数据。")
                 return []
@@ -262,24 +261,24 @@ class PortfolioManager:
                     else:
                         cursor = conn.cursor()
 
-                        for i, update_fields in enumerate(update_fields_list):
-                            update_fields['market_value_rate'] = update_fields['market_value'] / total_mv if total_mv != 0 else 0
-                            update_fields['risk_exposure_rate'] = update_fields['risk_exposure'] / total_risk if total_risk != 0 else 0
-                            # 组装 SQL
-                            if self.db_type == 'postgres':
-                                placeholder = '%s'
-                            else:
-                                placeholder = '?'
-                            set_clause = ', '.join([f"{k} = {placeholder}" for k in update_fields.keys()])
-                            sql = f"UPDATE holdings SET {set_clause} WHERE id = {placeholder}"
-                            values = list(update_fields.values()) + [holdings[i]['id']]
-                            try:
-                                cursor.execute(sql, values)
-                            except Exception as e:
-                                self.log_update_error(e)
-                            updated = dict(holdings[i])
-                            updated.update(update_fields)
-                            updated_data.append(updated)
+                    for i, update_fields in enumerate(update_fields_list):
+                        update_fields['market_value_rate'] = update_fields['market_value'] / total_mv if total_mv != 0 else 0
+                        update_fields['risk_exposure_rate'] = update_fields['risk_exposure'] / total_risk if total_risk != 0 else 0
+                        # 组装 SQL
+                        if self.db_type == 'postgres':
+                            placeholder = '%s'
+                        else:
+                            placeholder = '?'
+                        set_clause = ', '.join([f"{k} = {placeholder}" for k in update_fields.keys()])
+                        sql = f"UPDATE holdings SET {set_clause} WHERE id = {placeholder}"
+                        values = list(update_fields.values()) + [holdings[i]['id']]
+                        try:
+                            cursor.execute(sql, values)
+                        except Exception as e:
+                            self.log_update_error(e)
+                        updated = dict(holdings[i])
+                        updated.update(update_fields)
+                        updated_data.append(updated)
                     conn.commit()
                 return updated_data
             except Exception as e:
@@ -300,6 +299,18 @@ class PortfolioManager:
 
 if __name__ == "__main__":
     # 仅用于本文件调试或命令行运行时的示例
-    portfolio_manager = PortfolioManager(db_type='sqlite', sqlite_path='holdings.db')
+    # 尝试导入python-dotenv（如果安装了）
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()  # 加载.env文件中的环境变量
+        print("已加载.env环境变量")
+        NEON_HOST = os.environ.get('NEON_HOST', '')
+        NEON_PORT = os.environ.get('NEON_PORT', '5432')
+        NEON_DB = os.environ.get('NEON_DB', '')
+        NEON_USER = os.environ.get('NEON_USER', '')
+        NEON_PASSWORD = os.environ.get('NEON_PASSWORD', '')
+    except ImportError:
+        print("python-dotenv未安装，仅使用系统环境变量")
+    portfolio_manager = PortfolioManager(db_type='postgres')
     portfolio_manager.init_db()
     portfolio_manager.update_data()
