@@ -3,7 +3,7 @@
 # 创建目录（如果不存在）
 mkdir -p assets/css
 mkdir -p assets/js
-mkdir -p assets/fonts
+mkdir -p assets/webfonts
 
 # 下载 Bootstrap CSS
 curl -L "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" -o assets/css/bootstrap.min.css
@@ -17,7 +17,7 @@ curl -L "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.m
 curl -L "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" -o assets/css/fontawesome.all.min.css
 
 # 下载 FontAwesome Webfonts（只下载常用的几种字体文件）
-cd assets/fonts
+cd assets/webfonts
 curl -O "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-solid-900.woff2"
 curl -O "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-brands-400.woff2"
 curl -O "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-regular-400.woff2"
