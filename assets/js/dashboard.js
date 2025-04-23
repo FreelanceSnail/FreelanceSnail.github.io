@@ -435,7 +435,49 @@ function renderHoldingsTable(data) {
 // 更新绩效概览
 function updatePerformanceSummary(data) {
   const arr = data || holdingsData;
-  // 计算总资产和总盈亏
+  // 判断是否为简要数据（无 quantity 字段）
+  const isSimple = arr.length > 0 && (!('quantity' in arr[0]) && !('avg_price' in arr[0]));
+
+  // 金额格式化
+  const formatMoney = (num) => {
+    return num.toLocaleString('zh-CN', {
+      style: 'currency',
+      currency: 'CNY',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+  // 百分比格式化
+  const formatPercent = (num) => {
+    return (num * 100).toFixed(2) + '%';
+  };
+
+  if (isSimple) {
+    // 简要数据，展示整体市值比例和风险敞口比例
+    let marketValueRate = arr[0].market_value_rate;
+    let riskExposureRate = arr[0].risk_exposure_rate;
+    // 若有多个分组，取加权平均
+    if (arr.length > 1) {
+      let totalMarketValue = 0, weightedRisk = 0, weightedMarketRate = 0;
+      arr.forEach(item => {
+        const mv = item.market_value || 0;
+        totalMarketValue += mv;
+        weightedRisk += (item.risk_exposure_rate || 0) * mv;
+        weightedMarketRate += (item.market_value_rate || 0) * mv;
+      });
+      marketValueRate = totalMarketValue ? weightedMarketRate / totalMarketValue : 0;
+      riskExposureRate = totalMarketValue ? weightedRisk / totalMarketValue : 0;
+    }
+    totalAssetsElement.textContent = '市值比例: ' + formatPercent(marketValueRate);
+    totalAssetsElement.className = '';
+    totalProfitElement.textContent = '风险敞口: ' + formatPercent(riskExposureRate);
+    totalProfitElement.className = '';
+    dailyProfitElement.textContent = '-';
+    dailyProfitElement.className = '';
+    return;
+  }
+
+  // 详细数据，计算总资产和总盈亏
   let totalAssets = 0;
   let totalProfit = 0;
   let dailyProfit = 0;
@@ -445,26 +487,14 @@ function updatePerformanceSummary(data) {
     const costPrice = holding.avg_price || 0;
     const quantity = holding.quantity || 0;
     const preclosePrice = holding.preclose_price || currentPrice;
-    
     // 计算
     const marketValue = currentPrice * quantity;
     const profit = (currentPrice - costPrice) * quantity;
     const dayProfit = (currentPrice - preclosePrice) * quantity;
-    
     totalAssets += marketValue;
     totalProfit += profit;
     dailyProfit += dayProfit;
   });
-  
-  // 更新UI
-  const formatMoney = (num) => {
-    return num.toLocaleString('zh-CN', {
-      style: 'currency',
-      currency: 'CNY',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
-  };
   
   totalAssetsElement.textContent = formatMoney(totalAssets);
   totalAssetsElement.className = '';
