@@ -177,6 +177,8 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchSimpleHoldings();
   // 初始化图表
   initCharts();
+  // 获取汇率
+  fetchAndShowRates();
 });
 
 // 从本地服务器获取持仓数据
@@ -278,7 +280,25 @@ async function refreshPrices() {
   fetchHoldings();
 }
 
-
+// 汇率显示
+async function fetchAndShowRates() {
+  // 使用 exchangerate.host 免费API
+  const url = 'https://api.exchangerate.host/latest?base=CNY&symbols=USD,HKD';
+  try {
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (data && data.rates) {
+      const usd = data.rates.USD;
+      const hkd = data.rates.HKD;
+      document.getElementById('exchange-rates').innerHTML =
+        `<span>人民币兑美元：<b>${usd.toFixed(4)}</b></span> &nbsp; | &nbsp; <span>人民币兑港币：<b>${hkd.toFixed(4)}</b></span>`;
+    } else {
+      document.getElementById('exchange-rates').textContent = '汇率获取失败';
+    }
+  } catch (e) {
+    document.getElementById('exchange-rates').textContent = '汇率获取失败';
+  }
+}
 
 // 更新投资组合过滤器
 function updatePortfolioFilter() {
@@ -371,18 +391,13 @@ function renderHoldingsTable(data) {
     { key: 'profit', name: '总盈亏' },
     { key: 'risk_exposure', name: '风险敞口' },
     { key: 'cost', name: '成本' },
-    { key: 'exchange', name: '交易所' },
-    { key: 'margin_ratio', name: '保证金比例' },
-    { key: 'point_value', name: '合约乘数' },
     { key: 'target_symbol', name: '标的代码' },
-    { key: 'createdAt', name: '创建时间' },
-    { key: 'updatedAt', name: '更新时间' },
     { key: 'market_value_rate', name: '市值占比(%)' },
     { key: 'risk_exposure_rate', name: '风险敞口(%)' },
     { key: 'style', name: '风格' },
     { key: 'delta', name: 'Delta' },
     { key: 'target_symbol_point', name: '标的点位' },
-    { key: 'target_symbol_pct', name: '标的比例' }
+    { key: 'target_symbol_pct', name: '标的涨跌幅' }
   ];
 
   // 判断是简要还是详细数据
@@ -407,17 +422,23 @@ function renderHoldingsTable(data) {
       else if (f.key === 'market_value_rate' || f.key === 'risk_exposure_rate') {
         let num = Number(val);
         if (!isNaN(num)) {
-          val = (num * 100).toFixed(2) + '%';
+          val = (num * 100).toFixed(3) + '%';
         } else {
           val = '-';
         }
       }
-      // 数字格式化
-      else if (typeof val === 'number') {
-        if (f.key === 'risk_exposure') {
-          val = val.toFixed(2);
+      // 数字格式化（除成本价、前收盘价、现价、symbol相关外全部保留两位小数）
+      else if (
+        typeof val === 'number' ||
+        (typeof val === 'string' && !isNaN(Number(val)) && val.trim() !== '')
+      ) {
+        if (
+          f.key.includes('symbol') ||
+          ['avg_price', 'cost_price', 'preclose', 'preclose_price', 'current_price'].includes(f.key)
+        ) {
+          val = val; // symbol相关或特殊字段，原样输出
         } else {
-          val = val.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          val = Number(val).toFixed(2);
         }
       }
       // 时间格式化
