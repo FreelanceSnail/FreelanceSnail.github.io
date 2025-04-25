@@ -23,7 +23,7 @@ class PortfolioManager:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close_connection()
 
-    def __init__(self, db_type='postgres', sqlite_path='portfolio.db'):
+    def __init__(self, db_type='postgres', sqlite_path='samples/portfolio.db'):
         self.db_type = db_type  # 'postgres' or 'sqlite'
         self.sqlite_path = sqlite_path
 
@@ -42,73 +42,14 @@ class PortfolioManager:
                 sslmode='require'
             )
 
+    from schema import HOLDINGS_CREATE_SQLITE, HOLDINGS_CREATE_POSTGRES
     def init_db(self):
         if self.db_type == 'sqlite':
-            create_sql = '''
-                CREATE TABLE IF NOT EXISTS holdings (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    symbol TEXT,
-                    name TEXT,
-                    type TEXT,
-                    current_price REAL,
-                    preclose_price REAL,
-                    account TEXT,
-                    portfolio TEXT,
-                    quantity REAL,
-                    avg_price REAL,
-                    exchange REAL,
-                    margin_ratio REAL,
-                    point_value REAL,
-                    target_symbol TEXT,
-                    created_at TEXT,
-                    updated_at TEXT,
-                    market_value_rate REAL DEFAULT 0,
-                    risk_exposure_rate REAL DEFAULT 0,
-                    market_value REAL DEFAULT 0,
-                    risk_exposure REAL DEFAULT 0,
-                    style TEXT,
-                    cost REAL,
-                    delta REAL,
-                    profit REAL,
-                    daily_profit REAL,
-                    target_symbol_point REAL,
-                    target_symbol_pct REAL
-                )
-            '''
+            create_sql = HOLDINGS_CREATE_SQLITE
         else:
             if not all([NEON_HOST, NEON_DB, NEON_USER, NEON_PASSWORD]):
                 raise ValueError("数据库连接信息不完整")
-            create_sql = '''
-                CREATE TABLE IF NOT EXISTS holdings (
-                    id SERIAL PRIMARY KEY,
-                    symbol TEXT,
-                    name TEXT,
-                    type TEXT,
-                    current_price NUMERIC,
-                    preclose_price NUMERIC,
-                    account TEXT,
-                    portfolio TEXT,
-                    quantity NUMERIC,
-                    avg_price NUMERIC,
-                    exchange NUMERIC,
-                    margin_ratio NUMERIC,
-                    point_value NUMERIC,
-                    target_symbol TEXT,
-                    created_at TEXT,
-                    updated_at TEXT,
-                    market_value_rate NUMERIC DEFAULT 0,
-                    risk_exposure_rate NUMERIC DEFAULT 0,
-                    market_value NUMERIC DEFAULT 0,
-                    risk_exposure NUMERIC DEFAULT 0,
-                    style TEXT,
-                    cost NUMERIC,
-                    delta NUMERIC,
-                    profit NUMERIC,
-                    daily_profit NUMERIC,
-                    target_symbol_point NUMERIC,
-                    target_symbol_pct NUMERIC
-                )
-            '''
+            create_sql = HOLDINGS_CREATE_POSTGRES
         with self.get_connection() as conn:
             c = conn.cursor()
             c.execute(create_sql)
@@ -311,6 +252,6 @@ if __name__ == "__main__":
         NEON_PASSWORD = os.environ.get('NEON_PASSWORD', '')
     except ImportError:
         print("python-dotenv未安装，仅使用系统环境变量")
-    portfolio_manager = PortfolioManager(db_type='postgres')
+    portfolio_manager = PortfolioManager(db_type='sqlite')
     portfolio_manager.init_db()
-    portfolio_manager.update_data()
+    #portfolio_manager.update_data()
