@@ -56,18 +56,19 @@ def log_request_info():
     # 打印访问日志
     print(f"[{now}] {ip} - {method} {path} - 来源: {origin} - {user_agent} - 数据: {json_data}")
 
-
+import os
+PORTFOLIO_PASSWORD = os.environ.get('PORTFOLIO_PASSWORD', '')
+DB_TYPE = os.environ.get('DB_TYPE', 'postgres')
 # API路由：获取所有持仓数据
 from portfolio_manager import PortfolioManager
 
 # 全局实例，避免多次连接/关闭数据库
-portfolio_manager = PortfolioManager()
+portfolio_manager = PortfolioManager(db_type=DB_TYPE)
 
 # 初始化数据库表结构（只需调用一次）
 portfolio_manager.init_db()
 
-import os
-PORTFOLIO_PASSWORD = os.environ.get('PORTFOLIO_PASSWORD', '')
+
 
 # 详细持仓数据接口
 @app.route('/api/holdings-detail', methods=['POST', 'GET'])
