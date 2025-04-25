@@ -1,7 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    activesupport (7.2.2.1)
+    activesupport (8.0.2)
       base64
       benchmark (>= 0.3)
       bigdecimal
@@ -13,6 +13,7 @@ GEM
       minitest (>= 5.1)
       securerandom (>= 0.3)
       tzinfo (~> 2.0, >= 2.0.5)
+      uri (>= 0.13.1)
     addressable (2.8.7)
       public_suffix (>= 2.0.2, < 7.0)
     base64 (0.2.0)
@@ -25,8 +26,8 @@ GEM
     colorator (1.1.0)
     commonmarker (0.23.11)
     concurrent-ruby (1.3.5)
-    connection_pool (2.5.0)
-    csv (3.3.3)
+    connection_pool (2.5.2)
+    csv (3.3.4)
     dnsruby (1.72.4)
       base64 (~> 0.2.0)
       logger (~> 1.6.5)
@@ -45,16 +46,14 @@ GEM
       logger
     faraday-net_http (3.4.0)
       net-http (>= 0.5.0)
-    ffi (1.17.1)
-    ffi (1.17.1-aarch64-linux)
-    ffi (1.17.1-aarch64-linux-musl)
-    ffi (1.17.1-arm-linux)
-    ffi (1.17.1-arm-linux-musl)
-    ffi (1.17.1-arm64-darwin)
-    ffi (1.17.1-x64-mingw-ucrt)
-    ffi (1.17.1-x86_64-darwin)
-    ffi (1.17.1-x86_64-linux)
-    ffi (1.17.1-x86_64-linux-musl)
+    ffi (1.17.2-aarch64-linux-gnu)
+    ffi (1.17.2-aarch64-linux-musl)
+    ffi (1.17.2-arm-linux-gnu)
+    ffi (1.17.2-arm-linux-musl)
+    ffi (1.17.2-arm64-darwin)
+    ffi (1.17.2-x86_64-darwin)
+    ffi (1.17.2-x86_64-linux-gnu)
+    ffi (1.17.2-x86_64-linux-musl)
     forwardable-extended (2.6.0)
     gemoji (4.1.0)
     github-pages (232)
@@ -225,7 +224,7 @@ GEM
       gemoji (>= 3, < 5)
       html-pipeline (~> 2.2)
       jekyll (>= 3.0, < 5.0)
-    json (2.10.2)
+    json (2.11.3)
     kramdown (2.4.0)
       rexml
     kramdown-parser-gfm (1.1.0)
@@ -236,7 +235,6 @@ GEM
       rb-inotify (~> 0.9, >= 0.9.10)
     logger (1.6.6)
     mercenary (0.3.6)
-    mini_portile2 (2.8.8)
     minima (2.5.1)
       jekyll (>= 3.5, < 5.0)
       jekyll-feed (~> 0.9)
@@ -244,26 +242,21 @@ GEM
     minitest (5.25.5)
     net-http (0.6.0)
       uri
-    nokogiri (1.18.7)
-      mini_portile2 (~> 2.8.2)
+    nokogiri (1.18.8-aarch64-linux-gnu)
       racc (~> 1.4)
-    nokogiri (1.18.7-aarch64-linux)
+    nokogiri (1.18.8-aarch64-linux-musl)
       racc (~> 1.4)
-    nokogiri (1.18.7-aarch64-linux-musl)
+    nokogiri (1.18.8-arm-linux-gnu)
       racc (~> 1.4)
-    nokogiri (1.18.7-arm-linux)
+    nokogiri (1.18.8-arm-linux-musl)
       racc (~> 1.4)
-    nokogiri (1.18.7-arm-linux-musl)
+    nokogiri (1.18.8-arm64-darwin)
       racc (~> 1.4)
-    nokogiri (1.18.7-arm64-darwin)
+    nokogiri (1.18.8-x86_64-darwin)
       racc (~> 1.4)
-    nokogiri (1.18.7-x64-mingw-ucrt)
+    nokogiri (1.18.8-x86_64-linux-gnu)
       racc (~> 1.4)
-    nokogiri (1.18.7-x86_64-darwin)
-      racc (~> 1.4)
-    nokogiri (1.18.7-x86_64-linux)
-      racc (~> 1.4)
-    nokogiri (1.18.7-x86_64-linux-musl)
+    nokogiri (1.18.8-x86_64-linux-musl)
       racc (~> 1.4)
     octokit (4.25.1)
       faraday (>= 1, < 3)
@@ -299,18 +292,16 @@ GEM
       tzinfo (>= 1.0.0)
     unicode-display_width (1.8.0)
     uri (1.0.3)
-    wdm (0.2.0)
     webrick (1.9.1)
 
 PLATFORMS
-  aarch64-linux
+  aarch64-linux-gnu
   aarch64-linux-musl
-  arm-linux
+  arm-linux-gnu
   arm-linux-musl
   arm64-darwin
-  x64-mingw-ucrt
   x86_64-darwin
-  x86_64-linux
+  x86_64-linux-gnu
   x86_64-linux-musl
 
 DEPENDENCIES
