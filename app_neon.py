@@ -211,5 +211,8 @@ if __name__ == '__main__':
     host = '0.0.0.0'
     port = int(os.environ.get('PORT', 10000))
     print(f"Flask后端服务已启动，监听 {host}:{port} ...")
-    print("连接到Neon PostgreSQL数据库")
+    if os.environ.get('DB_TYPE', 'postgres') == 'sqlite':
+        print("连接到本地SQLite数据库")
+    else:
+        print("连接到Neon PostgreSQL数据库")
     app.run(debug=True, host=host, port=port)

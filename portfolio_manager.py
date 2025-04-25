@@ -15,6 +15,7 @@ NEON_PASSWORD = os.environ.get('NEON_PASSWORD', '')
 import os
 import psycopg2
 import sqlite3
+from schema import HOLDINGS_CREATE_SQLITE, HOLDINGS_CREATE_POSTGRES
 
 class PortfolioManager:
     def __enter__(self):
@@ -42,7 +43,6 @@ class PortfolioManager:
                 sslmode='require'
             )
 
-    from schema import HOLDINGS_CREATE_SQLITE, HOLDINGS_CREATE_POSTGRES
     def init_db(self):
         if self.db_type == 'sqlite':
             create_sql = HOLDINGS_CREATE_SQLITE
