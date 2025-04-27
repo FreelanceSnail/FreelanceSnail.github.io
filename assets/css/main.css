@@ -50,6 +50,7 @@ main {
   font-weight: 600;
   position: sticky;
   top: 0;
+  white-space: nowrap;
   background: white;
   z-index: 15;
 }
