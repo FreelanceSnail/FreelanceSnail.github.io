@@ -68,7 +68,7 @@ class PortfolioManager:
                 cursor = conn.cursor()
             try:
                 if safemode:
-                    cursor.execute("SELECT id, symbol, name, type, current_price, preclose_price, account, portfolio, market_value_rate, risk_exposure_rate FROM holdings")
+                    cursor.execute("SELECT id, symbol, name, type, current_price, preclose_price, account, portfolio, market_value_rate, equalled_market_value_rate FROM holdings")
                 else:
                     cursor.execute("SELECT * FROM holdings")
                 rows = cursor.fetchall()
@@ -86,7 +86,7 @@ class PortfolioManager:
                             'account': row.get('account'),
                             'portfolio': row.get('portfolio'),
                             'market_value_rate': row.get('market_value_rate') or 0,
-                            'risk_exposure_rate': row.get('risk_exposure_rate') or 0,
+                            'equalled_market_value_rate': row.get('equalled_market_value_rate') or 0,
                             'style': row.get('style'),
                         })
                     else:
@@ -108,9 +108,9 @@ class PortfolioManager:
                             'createdAt': row.get('created_at'),
                             'updatedAt': row.get('updated_at'),
                             'market_value_rate': row.get('market_value_rate') or 0,
-                            'risk_exposure_rate': row.get('risk_exposure_rate') or 0,
+                            'equalled_market_value_rate': row.get('equalled_market_value_rate') or 0,
                             'market_value': row.get('market_value') or 0,
-                            'risk_exposure': row.get('risk_exposure') or 0,
+                            'equalled_market_value': row.get('equalled_market_value') or 0,
                             'style': row.get('style'),
                             'cost': row.get('cost') or 0,
                             'delta': row.get('delta') or 1,
@@ -181,19 +181,19 @@ class PortfolioManager:
                 update_fields['market_value'] = update_fields['profit'] + cost
                 
                 update_fields['daily_profit'] = (current_price - float(update_fields['preclose_price'] or 0)) * quantity * update_fields['point_value']
-                # 风险敞口
+                # 等效市值
                 if row['type'] == 'option':
-                    update_fields['risk_exposure'] = update_fields['target_symbol_point'] * quantity * update_fields['point_value'] * update_fields['delta']
+                    update_fields['equalled_market_value'] = update_fields['target_symbol_point'] * quantity * update_fields['point_value'] * update_fields['delta']
                 else:
-                    update_fields['risk_exposure'] = current_price * quantity * update_fields['point_value'] * update_fields['delta']
+                    update_fields['equalled_market_value'] = current_price * quantity * update_fields['point_value'] * update_fields['delta']
 
                 # 更新时间
                 update_fields['updated_at'] = now
                 update_fields_list.append(update_fields)
-            # 计算总市值和风险敞口
+            # 计算总市值和等效市值
             total_mv = sum(update_fields['market_value'] for update_fields in update_fields_list)
-            total_risk = sum(update_fields['risk_exposure'] for update_fields in update_fields_list)
-            # 计算市值和风险比率
+            total_equalled_mv = sum(update_fields['equalled_market_value'] for update_fields in update_fields_list)
+            # 计算市值和等效市值比率
             # 优化：只建立一次数据库连接和游标
             try:
                 with self.get_connection() as conn:
@@ -204,7 +204,7 @@ class PortfolioManager:
 
                     for i, update_fields in enumerate(update_fields_list):
                         update_fields['market_value_rate'] = update_fields['market_value'] / total_mv if total_mv != 0 else 0
-                        update_fields['risk_exposure_rate'] = update_fields['risk_exposure'] / total_risk if total_risk != 0 else 0
+                        update_fields['equalled_market_value_rate'] = update_fields['equalled_market_value'] / total_mv if total_mv != 0 else 0
                         # 组装 SQL
                         if self.db_type == 'postgres':
                             placeholder = '%s'
@@ -254,4 +254,4 @@ if __name__ == "__main__":
         print("python-dotenv未安装，仅使用系统环境变量")
     portfolio_manager = PortfolioManager(db_type='sqlite')
     portfolio_manager.init_db()
-    #portfolio_manager.update_data()
+    portfolio_manager.update_data()

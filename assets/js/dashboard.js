@@ -374,7 +374,7 @@ function renderHoldingsTable(data) {
     { key: 'current_price', name: '现价' },
     { key: 'preclose_price', name: '前收' },
     { key: 'market_value_rate', name: '市值占比(%)' },
-    { key: 'risk_exposure_rate', name: '风险敞口(%)' },
+    { key: 'equalled_market_value_rate', name: '等效市值占比(%)' },
     { key: 'style', name: '风格' }
   ];
   const detailFields = [
@@ -389,11 +389,11 @@ function renderHoldingsTable(data) {
     { key: 'market_value', name: '市值' },
     { key: 'daily_profit', name: '当日盈亏' },
     { key: 'profit', name: '总盈亏' },
-    { key: 'risk_exposure', name: '风险敞口' },
+    { key: 'equalled_market_value', name: '等效市值' },
     { key: 'cost', name: '成本' },
     { key: 'target_symbol', name: '标的代码' },
     { key: 'market_value_rate', name: '市值占比(%)' },
-    { key: 'risk_exposure_rate', name: '风险敞口(%)' },
+    { key: 'equalled_market_value_rate', name: '等效市值占比(%)' },
     { key: 'style', name: '风格' },
     { key: 'delta', name: 'Delta' },
     { key: 'target_symbol_point', name: '标的点位' },
@@ -419,7 +419,7 @@ function renderHoldingsTable(data) {
         val = typeMap[val] || val || '-';
       }
       // 百分比字段特殊处理
-      else if (f.key === 'market_value_rate' || f.key === 'risk_exposure_rate') {
+      else if (f.key === 'market_value_rate' || f.key === 'equalled_market_value_rate') {
         let num = Number(val);
         if (!isNaN(num)) {
           val = (num * 100).toFixed(3) + '%';
@@ -474,27 +474,34 @@ function updatePerformanceSummary(data) {
   };
 
   if (isSimple) {
-    // 简要数据，展示整体市值比例和风险敞口比例
-    let marketValueRate = arr[0].market_value_rate;
-    let riskExposureRate = arr[0].risk_exposure_rate;
-    // 若有多个分组，取加权平均
-    if (arr.length > 1) {
-      let totalMarketValue = 0, weightedRisk = 0, weightedMarketRate = 0;
-      arr.forEach(item => {
-        const mv = item.market_value || 0;
-        totalMarketValue += mv;
-        weightedRisk += (item.risk_exposure_rate || 0) * mv;
-        weightedMarketRate += (item.market_value_rate || 0) * mv;
-      });
-      marketValueRate = totalMarketValue ? weightedMarketRate / totalMarketValue : 0;
-      riskExposureRate = totalMarketValue ? weightedRisk / totalMarketValue : 0;
-    }
+    // 简要数据，展示整体市值比例和等效市值比例（直接求和）
+    let marketValueRate = 0;
+    let equalledMarketValueRate = 0;
+    let typeMarketValueRate = {};
+    let typeEqualledMarketValueRate = {};
+
+    arr.forEach(item => {
+      marketValueRate += item.market_value_rate || 0;
+      equalledMarketValueRate += item.equalled_market_value_rate || 0;
+      const t = item.type || 'unknown';
+      if (!typeMarketValueRate[t]) typeMarketValueRate[t] = 0;
+      if (!typeEqualledMarketValueRate[t]) typeEqualledMarketValueRate[t] = 0;
+      typeMarketValueRate[t] += item.market_value_rate || 0;
+      typeEqualledMarketValueRate[t] += item.equalled_market_value_rate || 0;
+    });
+
     totalAssetsElement.textContent = '市值比例: ' + formatPercent(marketValueRate);
     totalAssetsElement.className = '';
-    totalProfitElement.textContent = '风险敞口: ' + formatPercent(riskExposureRate);
+    totalProfitElement.textContent = '等效市值总比例: ' + formatPercent(equalledMarketValueRate);
     totalProfitElement.className = '';
     dailyProfitElement.textContent = '-';
     dailyProfitElement.className = '';
+
+    // TODO: 可以将 typeMarketValueRate 和 typeEqualledMarketValueRate 传递给饼图绘制逻辑
+    // 例如 updateChartsWithSimpleRates(typeMarketValueRate, typeEqualledMarketValueRate);
+    // 或将它们存储在全局变量中，供 updateCharts 使用
+    window.simpleTypeMarketValueRate = typeMarketValueRate;
+    window.simpleTypeEqualledMarketValueRate = typeEqualledMarketValueRate;
     return;
   }
 
@@ -537,10 +544,10 @@ function initCharts() {
 function updateCharts(data) {
   // 如果Chart.js已加载，则创建资产配置图表
   if (typeof Chart !== 'undefined' && assetAllocationChart) {
-    const filteredData = data || holdingsData || [];
-    
-    // 按类型分组资产
-    const assetsByType = {};
+    // 优先使用简要数据下的类型市值比例（window.simpleTypeMarketValueRate）
+    let chartLabels = [];
+    let chartData = [];
+    let colors = [];
     const typeColors = {
       'stock': '#4285F4',
       'etf': '#34A853',
@@ -548,9 +555,9 @@ function updateCharts(data) {
       'future': '#EA4335',
       'option': '#8F44AD',
       'us_stock': '#3498DB',
+      'hk_stock': '#F39C12',
       'cash': '#95A5A6'
     };
-    
     const typeMap = {
       'stock': '股票',
       'etf': 'ETF',
@@ -561,34 +568,36 @@ function updateCharts(data) {
       'hk_stock': '港股',
       'cash': '现金'
     };
-    
-    filteredData.forEach(holding => {
-      const type = holding.type || 'unknown';
-      const marketValue = (holding.current_price || 0) * (holding.quantity || 0);
-      
-      if (!assetsByType[type]) {
-        assetsByType[type] = 0;
-      }
-      
-      assetsByType[type] += marketValue;
-    });
-    
-    // 准备图表数据
-    const labels = Object.keys(assetsByType).map(type => typeMap[type] || type);
-    const chartData = Object.values(assetsByType);
-    const colors = Object.keys(assetsByType).map(type => typeColors[type] || '#ccc');
-    
+    if (window.simpleTypeEqualledMarketValueRate) {
+      chartLabels = Object.keys(window.simpleTypeEqualledMarketValueRate).map(type => typeMap[type] || type);
+      chartData = Object.values(window.simpleTypeEqualledMarketValueRate);
+      colors = Object.keys(window.simpleTypeEqualledMarketValueRate).map(type => typeColors[type] || '#ccc');
+    } else {
+      const filteredData = data || holdingsData || [];
+      // 按类型分组资产
+      const assetsByType = {};
+      filteredData.forEach(holding => {
+        const type = holding.type || 'unknown';
+        const marketValue = (holding.current_price || 0) * (holding.quantity || 0);
+        if (!assetsByType[type]) {
+          assetsByType[type] = 0;
+        }
+        assetsByType[type] += marketValue;
+      });
+      chartLabels = Object.keys(assetsByType).map(type => typeMap[type] || type);
+      chartData = Object.values(assetsByType);
+      colors = Object.keys(assetsByType).map(type => typeColors[type] || '#ccc');
+    }
     // 销毁旧图表
     if (window.assetChart) {
       window.assetChart.destroy();
     }
-    
     // 创建新图表
     const ctx = assetAllocationChart.getContext('2d');
     window.assetChart = new Chart(ctx, {
       type: 'doughnut',
       data: {
-        labels: labels,
+        labels: chartLabels,
         datasets: [{
           data: chartData,
           backgroundColor: colors,
@@ -606,6 +615,15 @@ function updateCharts(data) {
             text: '资产配置',
             font: {
               size: 16
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const label = context.label || '';
+                const value = context.parsed;
+                return label + ': ' + (value * 100).toFixed(2) + '%';
+              }
             }
           }
         }
