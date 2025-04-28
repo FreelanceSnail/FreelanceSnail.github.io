@@ -481,13 +481,13 @@ function updatePerformanceSummary(data) {
     let typeEqualledMarketValueRate = {};
 
     arr.forEach(item => {
-      marketValueRate += item.market_value_rate || 0;
-      equalledMarketValueRate += item.equalled_market_value_rate || 0;
+      marketValueRate += Number(item.market_value_rate) || 0;
+      equalledMarketValueRate += Number(item.equalled_market_value_rate) || 0;
       const t = item.type || 'unknown';
       if (!typeMarketValueRate[t]) typeMarketValueRate[t] = 0;
       if (!typeEqualledMarketValueRate[t]) typeEqualledMarketValueRate[t] = 0;
-      typeMarketValueRate[t] += item.market_value_rate || 0;
-      typeEqualledMarketValueRate[t] += item.equalled_market_value_rate || 0;
+      typeMarketValueRate[t] += Number(item.market_value_rate) || 0;
+      typeEqualledMarketValueRate[t] += Number(item.equalled_market_value_rate) || 0;
     });
 
     totalAssetsElement.textContent = '市值比例: ' + formatPercent(marketValueRate);
