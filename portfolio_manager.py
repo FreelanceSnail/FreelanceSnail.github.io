@@ -68,7 +68,7 @@ class PortfolioManager:
                 cursor = conn.cursor()
             try:
                 if safemode:
-                    cursor.execute("SELECT id, symbol, name, type, current_price, preclose_price, account, portfolio, market_value_rate, equalled_market_value_rate FROM holdings")
+                    cursor.execute("SELECT id, symbol, name, type, style, current_price, preclose_price, account, portfolio, market_value_rate, equalled_market_value_rate FROM holdings")
                 else:
                     cursor.execute("SELECT * FROM holdings")
                 rows = cursor.fetchall()
@@ -81,6 +81,7 @@ class PortfolioManager:
                             'symbol': row.get('symbol'),
                             'name': row.get('name'),
                             'type': row.get('type'),
+                            'style': row.get('style'),
                             'current_price': row.get('current_price') or 0,
                             'preclose_price': row.get('preclose_price') or 0,
                             'account': row.get('account'),

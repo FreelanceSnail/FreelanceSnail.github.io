@@ -199,6 +199,7 @@ async function fetchSimpleHoldings() {
     updatePerformanceSummary();
     updateOverviewTitle();
     updateCharts();
+    fetchAndShowRates();
   } catch (error) {
     console.error('获取持仓数据失败:', error);
     holdingsTable.innerHTML = `<tr><td colspan=\"8\" class=\"text-center text-danger\">获取数据失败: ${error.message}</td></tr>`;
@@ -211,6 +212,7 @@ async function fetchSimpleHoldings() {
     updatePerformanceSummary();
     updateOverviewTitle();
     updateCharts();
+    fetchAndShowRates();
   }
 }
 
@@ -243,6 +245,7 @@ async function fetchHoldingsDetail() {
       updatePerformanceSummary();
       updateOverviewTitle();
       updateCharts();
+      fetchAndShowRates();
       break;
     } catch (error) {
       console.error('获取详细持仓数据失败:', error);
@@ -256,6 +259,7 @@ async function fetchHoldingsDetail() {
       updatePerformanceSummary();
       updateOverviewTitle();
       updateCharts();
+      fetchAndShowRates();
       break;
     }
   }
@@ -281,23 +285,31 @@ async function refreshPrices() {
 }
 
 // 汇率显示
-async function fetchAndShowRates() {
-  // 使用 exchangerate.host 免费API
-  const url = 'https://api.exchangerate.host/latest?base=CNY&symbols=USD,HKD';
-  try {
-    const resp = await fetch(url);
-    const data = await resp.json();
-    if (data && data.rates) {
-      const usd = data.rates.USD;
-      const hkd = data.rates.HKD;
-      document.getElementById('exchange-rates').innerHTML =
-        `<span>人民币兑美元：<b>${usd.toFixed(4)}</b></span> &nbsp; | &nbsp; <span>人民币兑港币：<b>${hkd.toFixed(4)}</b></span>`;
-    } else {
-      document.getElementById('exchange-rates').textContent = '汇率获取失败';
-    }
-  } catch (e) {
-    document.getElementById('exchange-rates').textContent = '汇率获取失败';
+function fetchAndShowRates() {
+  const ratesDiv = document.getElementById('exchange-rates');
+  if (!holdingsData || !Array.isArray(holdingsData) || holdingsData.length === 0) {
+    ratesDiv.textContent = '';
+    return;
   }
+  // 简要数据直接不显示
+  const arr = holdingsData;
+  const isSimple = arr.length > 0 && !('quantity' in arr[0]);
+  if (isSimple) {
+    ratesDiv.textContent = '';
+    return;
+  }
+  let usdRate = null, hkdRate = null;
+  for (let i = 0; i < arr.length; ++i) {
+    const item = arr[i];
+    if (!usdRate && item.type === 'us_stock' && item.exchange) usdRate = item.exchange;
+    if (!hkdRate && item.type === 'hk_stock' && item.exchange) hkdRate = item.exchange;
+    if (usdRate && hkdRate) break;
+  }
+  let html = '';
+  if (usdRate) html += `<span>人民币兑美元：<b>${usdRate}</b></span>`;
+  if (usdRate && hkdRate) html += ' &nbsp; | &nbsp; ';
+  if (hkdRate) html += `<span>人民币兑港币：<b>${hkdRate}</b></span>`;
+  ratesDiv.innerHTML = html;
 }
 
 // 更新投资组合过滤器
@@ -457,7 +469,7 @@ function renderHoldingsTable(data) {
 function updatePerformanceSummary(data) {
   const arr = data || holdingsData;
   // 判断是否为简要数据（无 quantity 字段）
-  const isSimple = arr.length > 0 && (!('quantity' in arr[0]) && !('avg_price' in arr[0]));
+  const isSimple = arr.length > 0 && !('quantity' in arr[0]);
 
   // 金额格式化
   const formatMoney = (num) => {
@@ -477,35 +489,43 @@ function updatePerformanceSummary(data) {
     // 简要数据，展示整体市值比例和等效市值比例（直接求和）
     let marketValueRate = 0;
     let equalledMarketValueRate = 0;
-    let typeMarketValueRate = {};
-    let typeEqualledMarketValueRate = {};
-
+    let styleEqualledMarketValueRate = {};
     arr.forEach(item => {
       marketValueRate += Number(item.market_value_rate) || 0;
       equalledMarketValueRate += Number(item.equalled_market_value_rate) || 0;
-      const t = item.type || 'unknown';
-      if (!typeMarketValueRate[t]) typeMarketValueRate[t] = 0;
-      if (!typeEqualledMarketValueRate[t]) typeEqualledMarketValueRate[t] = 0;
-      typeMarketValueRate[t] += Number(item.market_value_rate) || 0;
-      typeEqualledMarketValueRate[t] += Number(item.equalled_market_value_rate) || 0;
+      const style = item.style || '未分类';
+      if (!styleEqualledMarketValueRate[style]) styleEqualledMarketValueRate[style] = 0;
+      styleEqualledMarketValueRate[style] += Number(item.equalled_market_value_rate) || 0;
     });
-
-    totalAssetsElement.textContent = '市值比例: ' + formatPercent(marketValueRate);
+    // 只统计非现金/债券类等效市值比例
+    const excludeStyles = ['现金', 'cash', '余额宝', '余额', '债券'];
+    let nonCashBondEqualledRate = 0;
+    for (const style in styleEqualledMarketValueRate) {
+      if (!excludeStyles.some(ex => style.includes(ex))) {
+        nonCashBondEqualledRate += styleEqualledMarketValueRate[style];
+      }
+    }
+    // 动态改label，并显示比例
+    document.getElementById('performance-summary-block').style.display = '';
+    document.getElementById('total-assets-label').textContent = '非现金债券类等效市值比例:';
+    document.getElementById('total-profit-label').textContent = '等效市值总比例:';
+    document.getElementById('daily-profit-label').textContent = '';
+    totalAssetsElement.textContent = formatPercent(nonCashBondEqualledRate);
     totalAssetsElement.className = '';
-    totalProfitElement.textContent = '等效市值总比例: ' + formatPercent(equalledMarketValueRate);
+    totalProfitElement.textContent = formatPercent(equalledMarketValueRate);
     totalProfitElement.className = '';
-    dailyProfitElement.textContent = '-';
+    dailyProfitElement.textContent = '';
     dailyProfitElement.className = '';
-
-    // TODO: 可以将 typeMarketValueRate 和 typeEqualledMarketValueRate 传递给饼图绘制逻辑
-    // 例如 updateChartsWithSimpleRates(typeMarketValueRate, typeEqualledMarketValueRate);
-    // 或将它们存储在全局变量中，供 updateCharts 使用
-    window.simpleTypeMarketValueRate = typeMarketValueRate;
-    window.simpleTypeEqualledMarketValueRate = typeEqualledMarketValueRate;
+    window.simpleStyleEqualledMarketValueRate = styleEqualledMarketValueRate;
     return;
   }
 
-  // 详细数据，计算总资产和总盈亏
+  // 详细数据，恢复label和显示
+  document.getElementById('performance-summary-block').style.display = '';
+  document.getElementById('total-assets-label').textContent = '总资产:';
+  document.getElementById('total-profit-label').textContent = '总盈亏:';
+  document.getElementById('daily-profit-label').textContent = '日盈亏:';
+
   let totalAssets = 0;
   let totalProfit = 0;
   let dailyProfit = 0;
@@ -544,49 +564,32 @@ function initCharts() {
 function updateCharts(data) {
   // 如果Chart.js已加载，则创建资产配置图表
   if (typeof Chart !== 'undefined' && assetAllocationChart) {
-    // 优先使用简要数据下的类型市值比例（window.simpleTypeMarketValueRate）
+    // 优先使用简要数据下的风格等效市值比例（window.simpleStyleEqualledMarketValueRate）
     let chartLabels = [];
     let chartData = [];
     let colors = [];
-    const typeColors = {
-      'stock': '#4285F4',
-      'etf': '#34A853',
-      'fund': '#FBBC05',
-      'future': '#EA4335',
-      'option': '#8F44AD',
-      'us_stock': '#3498DB',
-      'hk_stock': '#F39C12',
-      'cash': '#95A5A6'
-    };
-    const typeMap = {
-      'stock': '股票',
-      'etf': 'ETF',
-      'fund': '基金',
-      'future': '期货',
-      'option': '期权',
-      'us_stock': '美股',
-      'hk_stock': '港股',
-      'cash': '现金'
-    };
-    if (window.simpleTypeEqualledMarketValueRate) {
-      chartLabels = Object.keys(window.simpleTypeEqualledMarketValueRate).map(type => typeMap[type] || type);
-      chartData = Object.values(window.simpleTypeEqualledMarketValueRate);
-      colors = Object.keys(window.simpleTypeEqualledMarketValueRate).map(type => typeColors[type] || '#ccc');
-    } else {
-      const filteredData = data || holdingsData || [];
-      // 按类型分组资产
-      const assetsByType = {};
-      filteredData.forEach(holding => {
-        const type = holding.type || 'unknown';
-        const marketValue = (holding.current_price || 0) * (holding.quantity || 0);
-        if (!assetsByType[type]) {
-          assetsByType[type] = 0;
+    // 风格配色可自定义
+    const styleColors = [
+      '#4285F4', '#34A853', '#FBBC05', '#EA4335', '#8F44AD', '#3498DB', '#F39C12', '#95A5A6', '#FF6F00', '#43A047', '#D81B60'
+    ];
+    let dataForChart = window.simpleStyleEqualledMarketValueRate;
+    if (dataForChart) {
+      chartLabels = Object.keys(dataForChart);
+      chartData = Object.values(dataForChart);
+      colors = chartLabels.map((_, i) => styleColors[i % styleColors.length]);
+    } else if (data && Array.isArray(data)) {
+      // 按风格分组资产
+      const assetsByStyle = {};
+      data.forEach(holding => {
+        const style = holding.style || '未分类';
+        if (!assetsByStyle[style]) {
+          assetsByStyle[style] = 0;
         }
-        assetsByType[type] += marketValue;
+        assetsByStyle[style] += Number(holding.equalled_market_value) || 0;
       });
-      chartLabels = Object.keys(assetsByType).map(type => typeMap[type] || type);
-      chartData = Object.values(assetsByType);
-      colors = Object.keys(assetsByType).map(type => typeColors[type] || '#ccc');
+      chartLabels = Object.keys(assetsByStyle).map(style => style || '未分类');
+      chartData = Object.values(assetsByStyle);
+      colors = chartLabels.map((_, i) => styleColors[i % styleColors.length]);
     }
     // 销毁旧图表
     if (window.assetChart) {
