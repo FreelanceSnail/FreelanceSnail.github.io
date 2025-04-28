@@ -1,3 +1,4 @@
+import string
 import akshare as ak
 import tushare as ts
 from typing import List, Dict
@@ -15,18 +16,18 @@ class MarketDataProvider:
         elif query_type != 'akshare':
             raise ValueError("无效的查询类型或缺少tushare token")
 
-    def update_prices_with_akshare(self, holdings: List[Dict]) -> List[Dict]:
+    def get_latest_prices_with_akshare(self, holdings: List[Dict]) -> List[Dict]:
         """
-        使用akshare更新持仓的最新价和前收价
+        使用akshare获取持仓的最新价和前收价
         :param holdings: 持仓列表
         :return: 更新后的持仓列表
         """
         # TODO: 实现使用akshare更新价格的逻辑
         return holdings
 
-    def update_prices_with_tushare(self, holdings: List[Dict]) -> List[Dict]:
+    def get_latest_prices_with_tushare(self, holdings: List[Dict]) -> List[Dict]:
         """
-        使用tushare更新持仓的最新价和前收价
+        使用tushare获取持仓的最新价和前收价
         :param holdings: 持仓列表
         :return: 更新后的持仓列表
         """
@@ -47,45 +48,83 @@ class MarketDataProvider:
                     holding['updated_at'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 else:
                     # 获取股票实时行情
-                    df = ts.pro_bar(ts_code=f"{symbol}.SH" if symbol.startswith('6') else f"{symbol}.SZ", 
-                                    asset='E', freq='D')
+                    market_data = self._get_symbol_data_from_tushare(symbol, 'stock')
                     
-                    if not df.empty:
-                        holding['current_price'] = float(df.iloc[0]['close'])
-                        holding['preclose_price'] = float(df.iloc[0]['pre_close'])
+                    if market_data['current'] is not None:
+                        holding['current_price'] = market_data['current']
+                        holding['preclose_price'] = market_data['pre_close']
                         holding['updated_at'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
                         symbol_market_data[symbol] = {
                             'current_price': float(df.iloc[0]['close']),
                             'preclose_price': float(df.iloc[0]['pre_close'])
                         }
-
-                # 更新跟踪标的点位和涨跌幅（如果适用）
-                if 'target_symbol' in holding:
-                    self.update_target_data(holding)
-            
             return holdings
         except Exception as e:
             print(f"[ERROR] 使用tushare更新价格失败: {str(e)}")
             return holdings
 
-    def update_target_data(self, holding: Dict):
+    def _get_symbol_data_from_tushare(self, symbol: str, type: str):
         """
-        更新跟踪标的的点位和涨跌幅
-        :param holding: 单个持仓项
+        根据 symbol 和 type 查询 tushare，返回当前价和前收盘价。
+        type: 'stock' | 'fund' | 'future'
+        返回: {'current': float, 'pre_close': float}
         """
-        target_symbol = holding['target_symbol']
-        try:
-            # 获取标的指数数据（示例：沪深300）
-            if target_symbol == '000300.SH':  # 沪深300
-                index_data = ak.stock_zh_index_spot()
-                target_info = index_data[index_data['代码'] == '000300']
-                
-                if not target_info.empty:
-                    holding['target_symbol_point'] = float(target_info.iloc[0]['最新价'])
-                    holding['target_symbol_pct'] = float(target_info.iloc[0]['涨跌幅'])
-            
-            # 可以添加其他标的指数的处理逻辑
-            
-        except Exception as e:
-            print(f"[ERROR] 更新跟踪标的数据失败: {str(e)}")
+        import tushare as ts
+        import datetime
+
+        ts_pro = getattr(self, 'ts_pro', None)
+        if ts_pro is None:
+            ts_pro = ts.pro_api()
+
+        today = datetime.datetime.now().strftime('%Y%m%d')
+        result = {'current': None, 'pre_close': None}
+
+        if type == 'stock':
+            # 股票用 daily
+            df = ts_pro.daily(ts_code=symbol, start_date=today, end_date=today)
+            if not df.empty:
+                row = df.iloc[0]
+                result['current'] = row['close']
+                result['pre_close'] = row['pre_close']
+        elif type == 'fund':
+            # 基金用 fund_nav
+            df = ts_pro.fund_nav(ts_code=symbol, nav_date=today)
+            if not df.empty:
+                row = df.iloc[0]
+                result['current'] = row.get('nav', None)
+                result['pre_close'] = row.get('adj_nav', None)
+        elif type == 'future':
+            # 期货用 fut_daily
+            df = ts_pro.fut_daily(ts_code=symbol, trade_date=today)
+            if not df.empty:
+                row = df.iloc[0]
+                result['current'] = row['close']
+                result['pre_close'] = row['pre_close']
+        else:
+            raise ValueError(f"Unsupported type: {type}")
+
+        return result
+
+    def get_latest_target_symbols_prices_with_tushare(self, target_symbols: List[Dict]) -> List[Dict]:
+        """
+        使用tushare获取跟踪标的点位和涨跌幅
+        :param target_symbols: 跟踪标的列表
+        :return: 更新后的跟踪标的列表
+        """
+        for item in target_symbols:
+            symbol = item.get('symbol')
+            type_ = item.get('type')
+            market_data = self._get_symbol_data_from_tushare(symbol, type_)
+            current = market_data.get('current')
+            pre_close = market_data.get('pre_close')
+            item['current_price'] = current
+            if pre_close not in (None, 0):
+                try:
+                    item['percentage_change'] = round((current - pre_close) / pre_close * 100, 4)
+                except Exception:
+                    item['percentage_change'] = None
+            else:
+                item['percentage_change'] = None
+        return target_symbols
+        
