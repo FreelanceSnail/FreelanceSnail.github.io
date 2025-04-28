@@ -93,39 +93,16 @@ def get_holdings_safemode():
 # 全局变量跟踪价格更新线程状态
 price_update_thread = None
 
+from flask import redirect, url_for
 # 价格刷新路由
 @app.route('/api/refresh_prices', methods=['GET', 'POST'])
 def refresh_prices():
-    global price_update_thread
-    # 密码支持GET参数或POST body
-    password = ''
+    # 支持GET和POST参数转发
+    params = request.args.to_dict(flat=True)
     if request.method == 'POST':
-        data = request.get_json()
-        password = data.get('password', '') if data else ''
-    else:
-        password = request.args.get('password', '')
-    if password != PORTFOLIO_PASSWORD:
-        return jsonify({'error': '密码错误'}), 401
-    try:
-        import threading
-        # 检查是否已有线程在运行
-        if price_update_thread and price_update_thread.is_alive():
-            return jsonify({
-                'status': 'success',
-                'message': '价格更新任务已在运行中'
-            })
-        # 启动后台线程执行价格更新
-        price_update_thread = threading.Thread(target=portfolio_manager.update_data, args=('akshare',))
-        price_update_thread.start()
-        return jsonify({
-            'status': 'success',
-            'message': '价格更新任务已开始'
-        })
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': f'价格更新任务启动失败: {str(e)}'
-        }), 500
+        data = request.get_json() or {}
+        params.update({k: v for k, v in data.items() if k not in params})
+    return redirect(url_for('refresh_data', **params))
 
 # 数据刷新路由（不拉取akshare，仅刷新本地数据）
 @app.route('/api/refresh_data', methods=['GET', 'POST'])
