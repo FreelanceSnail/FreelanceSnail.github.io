@@ -17,6 +17,7 @@ except ImportError:
 app = Flask(__name__)
 # 限制CORS配置，仅允许指定域名和本地调试访问
 ALLOWED_ORIGINS = [
+    "https://snail-cafe.cn"
     "https://freelancesnail.github.io",  # 你的GitHub Pages域名
     "http://localhost:4000",            # 本地开发前端
     "http://127.0.0.1:4000",            # 本地开发前端
