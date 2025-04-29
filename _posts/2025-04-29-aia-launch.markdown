@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "AIA项目正式启动"
-date:   2024-06-01 10:00:00 +0800
+date:   2025-04-29 10:00:00 +0800
 categories: 开发
 sticky: true
 cover_image: /assets/images/launch.svg
@@ -29,19 +29,28 @@ summary: 投资助手全新上线
 
 在接下来的开发中，我计划添加以下功能：
 
-- **风险管理**：计算VaR、波动率等风险指标
-- **指标管理**：自定义技术指标和基本面指标
-- **策略管理**：回测和评估投资策略
+- **量化看板**：查看和分析量化指标数据
 
 ## 技术实现
 
 AIA使用以下技术栈构建：
 
-- **GitHub Pages** - 托管和部署
-- **Jekyll** - 静态网站生成
-- **Bootstrap** - 前端界面
-- **LeanCloud** - 数据存储和API
-- **Chart.js** - 数据可视化
+- 前端：
+  - **GitHub Pages** - 托管和部署
+  - **Jekyll** - 静态网站生成
+  - **Bootstrap** - 前端界面
+  - **Chart.js** - 数据可视化
+- 后端：
+  - **Flask** - Web框架
+  - **Render** - 云代码托管
+  - **Neon** - 数据云存储
+
+## 技术迁移
+考虑到Render和Neon免费版的限制，我计划将后端迁移到Cloudflare.
+包含以下迁移内容：
+1. 前端直接从github一键迁移到cloudflare pages.
+2. 后端的flask应用用Javascript重写并迁移到cloudflare worker.
+3. 数据库从Neon迁移到cloudflare D1.
 
 ## 关注项目
 
