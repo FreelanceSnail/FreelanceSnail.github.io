@@ -17,12 +17,6 @@ const typeMap = {
   'cash': '现金'
 };
 
-// 本地服务器地址
-const API_BASE_URL =
-  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    ? 'http://localhost:10000'
-    : 'https://freelancesnail-data-api.onrender.com';
-
 // DOM元素
 const portfolioSelector = document.getElementById('portfolio-selector');
 const typeFilter = document.getElementById('type-filter');
@@ -185,11 +179,13 @@ document.addEventListener('DOMContentLoaded', () => {
 // 获取无需密码的简要持仓数据
 async function fetchSimpleHoldings() {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/holdings`);
+    const response = await fetch(`${API_BASE_URL}/api/positions/summary`);
     if (!response.ok) throw new Error('网络错误');
     const data = await response.json();
-    const arr = Array.isArray(data) ? data : (Array.isArray(data.results) ? data.results : []);
-    if (!arr.length) throw new Error('接口返回格式错误: 没有数据');
+    // 后端直接返回数组，不再有 results 字段
+    const arr = Array.isArray(data) ? data : [];
+    if (!arr.length && response.ok) console.warn('接口返回空数组'); // 如果响应成功但数组为空，打印警告而非报错
+    else if (!Array.isArray(data)) throw new Error('接口返回格式错误: 期望数组'); // 如果不是数组则报错
     holdingsData = arr;
     portfolios = new Set(arr.map(item => item.portfolio));
     assetTypes = new Set(arr.map(item => item.type));
@@ -222,7 +218,7 @@ async function fetchHoldingsDetail() {
     let password = await getPassword();
     if (!password) return; // 用户取消
     try {
-      const response = await fetch(`${API_BASE_URL}/api/holdings-detail`, {
+      const response = await fetch(`${API_BASE_URL}/api/positions/detail`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -235,7 +231,10 @@ async function fetchHoldingsDetail() {
         continue;
       }
       const data = await response.json();
-      const arr = Array.isArray(data) ? data : (Array.isArray(data.results) ? data.results : []);
+      // 后端直接返回数组，不再有 results 字段
+      const arr = Array.isArray(data) ? data : [];
+      if (!arr.length && response.ok) console.warn('接口返回空数组'); // 如果响应成功但数组为空，打印警告而非报错
+      else if (!Array.isArray(data)) throw new Error('接口返回格式错误: 期望数组'); // 如果不是数组则报错
       holdingsData = arr;
       portfolios = new Set(arr.map(item => item.portfolio));
       assetTypes = new Set(arr.map(item => item.type));
@@ -269,7 +268,7 @@ async function fetchHoldingsDetail() {
 async function refreshPrices() {
   const password = await getPassword(true);
   if (!password) return;
-  let res = await fetch(`${API_BASE_URL}/api/refresh_prices`, {
+  let res = await fetch(`${API_BASE_URL}/api/refresh`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ password })

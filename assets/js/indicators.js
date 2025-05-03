@@ -2,15 +2,11 @@
 // 自动拉取 /api/indicators 并渲染到 #indicators-root
 
 (function() {
-  const API_BASE_URL =
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-      ? 'http://localhost:10000'
-      : 'https://freelancesnail-data-api.onrender.com';
-
+  // DOM Elements
   const root = document.getElementById('indicators-root');
 
   function renderError(msg) {
-    root.innerHTML = `<div class="alert alert-danger text-center">${msg}</div>`;
+      root.innerHTML = `<div class="alert alert-danger text-center">${msg}</div>`;
   }
 
   function renderLoading() {
