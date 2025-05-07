@@ -382,8 +382,8 @@ function renderHoldingsTable(data) {
     { key: 'name', name: '名称' },
     { key: 'type', name: '类型' },
     { key: 'portfolio', name: '账户' },
-    { key: 'current_price', name: '现价' },
-    { key: 'preclose_price', name: '前收' },
+    { key: 'price', name: '现价' },
+    { key: 'preclose', name: '前收' },
     { key: 'market_value_rate', name: '市值占比(%)' },
     { key: 'equalled_market_value_rate', name: '等效市值占比(%)' },
     { key: 'style', name: '风格' }
@@ -394,9 +394,9 @@ function renderHoldingsTable(data) {
     { key: 'type', name: '类型' },
     { key: 'portfolio', name: '账户' },
     { key: 'quantity', name: '数量' },
-    { key: 'avg_price', name: '成本价' },
-    { key: 'preclose_price', name: '前收' },
-    { key: 'current_price', name: '现价' },
+    { key: 'cost_price', name: '成本价' },
+    { key: 'preclose', name: '前收' },
+    { key: 'price', name: '现价' },
     { key: 'market_value', name: '市值' },
     { key: 'daily_profit', name: '当日盈亏' },
     { key: 'profit', name: '总盈亏' },
@@ -406,9 +406,7 @@ function renderHoldingsTable(data) {
     { key: 'market_value_rate', name: '市值占比(%)' },
     { key: 'equalled_market_value_rate', name: '等效市值占比(%)' },
     { key: 'style', name: '风格' },
-    { key: 'delta', name: 'Delta' },
-    { key: 'target_symbol_point', name: '标的点位' },
-    { key: 'target_symbol_pct', name: '标的涨跌幅' }
+    { key: 'delta', name: 'Delta' }
   ];
 
   // 判断是简要还是详细数据
@@ -445,7 +443,7 @@ function renderHoldingsTable(data) {
       ) {
         if (
           f.key.includes('symbol') ||
-          ['avg_price', 'cost_price', 'preclose', 'preclose_price', 'current_price'].includes(f.key)
+          ['avg_price', 'cost_price', 'preclose', 'price'].includes(f.key)
         ) {
           val = val; // symbol相关或特殊字段，原样输出
         } else {
@@ -453,7 +451,7 @@ function renderHoldingsTable(data) {
         }
       }
       // 时间格式化
-      else if ((f.key === 'createdAt' || f.key === 'updatedAt') && val) {
+      else if (f.key === 'updatedAt' && val) {
         val = String(val).replace('T', ' ').slice(0, 19);
       }
       if (val === undefined || val === null || val === '') val = '-';
