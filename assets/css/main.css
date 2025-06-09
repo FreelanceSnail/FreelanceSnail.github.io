@@ -15,25 +15,9 @@ main {
 }
 
 /* 首页样式 */
-#dashboard-link {
-  margin-top: 2rem;
-  text-align: center;
-}
-
 .btn-primary {
   background-color: #007bff;
   border-color: #007bff;
-}
-
-/* 持仓管理页面 */
-.dashboard-container {
-  padding-bottom: 2rem;
-}
-
-.page-title {
-  margin-bottom: 1.5rem;
-  font-weight: bold;
-  color: #333;
 }
 
 .card {
@@ -44,61 +28,6 @@ main {
 .card-header {
   background-color: #f8f9fa;
   font-weight: 500;
-}
-
-#holdings-table th {
-  font-weight: 600;
-  position: sticky;
-  top: 0;
-  white-space: nowrap;
-  background: white;
-  z-index: 15;
-}
-
-#holdings-table td:first-child,
-#holdings-table th:first-child,
-#holdings-table td:nth-child(2),
-#holdings-table th:nth-child(2) {
-  position: sticky;
-  left: 0;
-  background: white;
-}
-
-#holdings-table td:nth-child(2),
-#holdings-table th:nth-child(2) {
-  left: 80px;
-}
-
-#holdings-table td:first-child,
-#holdings-table td:nth-child(2) {
-  z-index: 15;
-}
-
-#holdings-table th:first-child,
-#holdings-table th:nth-child(2) {
-  z-index: 20;
-}
-
-.table-responsive {
-  overflow: auto;
-  max-height: 600px;
-}
-
-#performance-summary {
-  padding: 1rem;
-  font-size: 1.1rem;
-}
-
-#performance-summary div {
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid #eee;
-}
-
-#performance-summary div:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
 }
 
 /* 博客标题字号调整 */
@@ -113,11 +42,4 @@ h3 {
 }
 p, article {
   font-size: 1em; /* 正文 15px */
-}
-
-/* 响应式调整 */
-@media (max-width: 768px) {
-  .dashboard-container .col-md-3 {
-    margin-bottom: 1.5rem;
-  }
 }

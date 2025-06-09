@@ -4,9 +4,6 @@ layout: default
 
 <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
 <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-<link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.2.0/css/all.min.css" rel="stylesheet">
-<script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
-<script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.0/echarts.min.js"></script>
 
 <div class="container">
   <div class="row">
@@ -17,31 +14,9 @@ layout: default
   </div>
   
   <div class="row mb-5">
-    <!-- 左侧：功能导航 -->
-    <div class="col-md-2">
-      <h2 class="mb-4 text-left">功能导航</h2>
-      <div class="d-flex flex-md-column flex-row gap-3 align-items-center w-100 justify-content-center">
-        <a href="{{ '/dashboard' | relative_url }}" style="text-decoration: none; color: inherit;">
-          <div class="card text-center" style="width: 160px; height: 160px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; flex: 1 1 0; min-width: 0;">
-            <div class="card-body d-flex flex-column justify-content-center align-items-center p-2" style="height: 100%;">
-              <i class="fas fa-chart-line mb-2 text-primary" style="font-size: 2rem;"></i>
-              <h6 class="card-title" style="font-size: 1rem;">AIA持仓分析</h6>
-            </div>
-          </div>
-        </a>
-        <a href="{{ '/indicators' | relative_url }}" style="text-decoration: none; color: inherit;">
-          <div class="card text-center" style="width: 160px; height: 160px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; flex: 1 1 0; min-width: 0;">
-            <div class="card-body d-flex flex-column justify-content-center align-items-center p-2" style="height: 100%;">
-              <i class="fas fa-chart-bar mb-2 text-success" style="font-size: 2rem;"></i>
-              <h6 class="card-title" style="font-size: 1rem;">AIA量化看板</h6>
-            </div>
-          </div>
-        </a>
-      </div>
-    </div>
-    <!-- 右侧：最新文章 -->
-    <div class="col-md-10">
-      <h2 class="mb-4">最新文章</h2>
+    <!-- 左侧：最新文章 -->
+    <div class="col-md-12">
+      <h2 class="mb-4 text-left">最新文章</h2>
       <div class="list-group">
         {% for post in site.posts limit:6 %}
         <a href="{{ post.url | relative_url }}" class="list-group-item list-group-item-action mb-3 p-0 border-0" style="display: flex; align-items: center;">
@@ -61,7 +36,6 @@ layout: default
       </div>
     {% endif %}
   </div>
-</div>
 </div>
 
 {{ content }} 

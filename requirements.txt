@@ -1,7 +1,0 @@
-flask==2.3.3
-flask-cors==4.0.0
-psycopg2-binary==2.9.9
-gunicorn==21.2.0 
-akshare==1.16.77
-tushare==1.4.21
-python-dotenv==1.1.0

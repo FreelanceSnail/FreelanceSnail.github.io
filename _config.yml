@@ -21,7 +21,7 @@
 title: 蜗牛自由生活馆
 email: lyuxueji@qq.com
 description: >- # this means to ignore newlines until "baseurl:"
-  分享我的投资心得和生活感悟，以及投资辅助工具AIA。
+  分享我的投资心得和生活感悟。
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: 
