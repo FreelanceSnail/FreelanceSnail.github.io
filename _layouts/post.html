@@ -1,0 +1,14 @@
+---
+layout: default
+---
+<article class="post">
+  <header class="post__header">
+    <p class="eyebrow">{{ page.date | date: "%Y年%m月%d日" }} · {{ page.tags | array_to_sentence_string }}</p>
+    <h1 class="post__title">{{ page.title }}</h1>
+    {% if page.summary %}<p class="lead">{{ page.summary }}</p>{% endif %}
+  </header>
+
+  <div class="post__content">
+    {{ content }}
+  </div>
+</article>
