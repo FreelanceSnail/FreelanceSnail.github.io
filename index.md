@@ -38,11 +38,11 @@ author: FreelanceSnail
   {% endfor %}
 </ul>
 
-<h3 class="section-title">量化指标实验室</h3>
+<h3 class="section-title">Gespenst Edge</h3>
 <div class="card">
-  <p>这里预留给未来的量化指标展示与定期刷新。为每个指标新增一个子页面（例如 <code>/lab/alpha-curve</code>），
+  <p>这里预留给未来的 Gespenst Edge 指标展示与定期刷新。为每个指标新增一个子页面（例如 <code>/gespenst_edge/alpha-curve</code>），
   将数据可视化或结果说明写进页面，即可自动加入导航与站点地图。</p>
   <div class="callout">
-    <strong>下一步</strong>：创建 <code>lab/</code> 下的新 Markdown 文件，使用 <code>layout: page</code> 或自定义布局，嵌入图表或表格，并在 <code>_config.yml</code> 的 <code>navigation</code> 中添加链接。
+    <strong>下一步</strong>：新建 Markdown 页面，使用 <code>layout: page</code> 或自定义布局，嵌入图表或表格，并在 <code>_config.yml</code> 的 <code>navigation</code> 中添加链接。
   </div>
 </div>

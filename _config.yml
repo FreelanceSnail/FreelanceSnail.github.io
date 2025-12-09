@@ -10,8 +10,8 @@ navigation:
     url: /
   - name: 日志
     url: /blog/
-  - name: 实验室
-    url: /lab/
+  - name: Gespenst Edge
+    url: /gespenst_edge/
   - name: 关于
     url: /about/
 

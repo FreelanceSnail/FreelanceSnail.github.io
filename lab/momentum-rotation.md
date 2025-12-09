@@ -2,7 +2,7 @@
 layout: page
 title: 动量轮动
 lead: 聚焦 21-24 个交易日的动量表现，快速定位强势标的。
-permalink: /lab/momentum-rotation/
+permalink: /gespenst_edge/momentum-rotation/
 ---
 
 利用 Akshare 拉取 4 支 ETF 的近月动量表现，按 21/22/23/24 个交易日的涨幅进行横向比较，并高亮各周期的领先标的。
