@@ -50,16 +50,32 @@ def _compute_returns(df: pd.DataFrame) -> Dict[int, float]:
     return returns
 
 
+def _collect_prices(df: pd.DataFrame) -> Dict[str, float]:
+    """Collect the latest close and the close price at each lookback period."""
+    closes = df["收盘"].astype(float).tolist()
+    prices: Dict[str, float] = {}
+    if not closes:
+        return prices
+
+    prices["latest"] = closes[-1]
+    for n in PERIODS:
+        if len(closes) >= n:
+            prices[str(n)] = closes[-n]
+    return prices
+
+
 def build_dataset(start_date: str, end_date: str) -> Dict:
     assets: List[Dict] = []
     for code, name in TARGETS.items():
         history = _fetch_history(code, start_date, end_date)
         asset_returns = _compute_returns(history)
+        asset_prices = _collect_prices(history)
         assets.append(
             {
                 "code": code,
                 "name": name,
                 "returns": {str(k): v for k, v in asset_returns.items()},
+                "prices": asset_prices,
                 "last_date": history["日期"].iloc[-1].strftime("%Y-%m-%d"),
                 "last_close": float(history["收盘"].iloc[-1]),
             }
