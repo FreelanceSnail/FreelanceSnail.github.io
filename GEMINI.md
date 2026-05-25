@@ -26,7 +26,7 @@ The project utilizes a hybrid approach:
 
 ## Data Tools (Python)
 
-To update the data for the "Momentum Rotation" lab page:
+To update the data for the "Momentum Rotation" dashboard page:
 
 1.  **Install Python Dependencies:**
     ```bash

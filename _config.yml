@@ -10,8 +10,8 @@ navigation:
     url: /
   - name: 日志
     url: /blog/
-  - name: Gespenst Edge
-    url: /gespenst_edge/
+  - name: 投资看板
+    url: /dashboard/
   - name: 关于
     url: /about/
 
