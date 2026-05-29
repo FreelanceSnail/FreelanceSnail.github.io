@@ -1,5 +1,5 @@
 # Project Overview
-**FreelanceSnail.github.io** is a personal blog titled "蜗牛自由生活馆" (Snail's Freedom Living Hall). The project is a static website built with **Jekyll** and hosted on **GitHub Pages**. It focuses on topics such as long-term investment, freelance life, and philosophical reflections.
+**FreelanceSnail.github.io** is a personal blog titled "蜗牛咖啡馆" (Snail Café). The project is a static website built with **Jekyll** and hosted on **GitHub Pages**. It focuses on topics such as long-term investment, freelance life, and philosophical reflections.
 
 The project utilizes a hybrid approach:
 - **Frontend:** Standard Jekyll structure (Liquid, Markdown, SCSS).

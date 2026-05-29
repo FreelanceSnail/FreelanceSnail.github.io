@@ -1,10 +1,10 @@
 ---
 layout: default
-title: 蜗牛自由生活馆
+title: 蜗牛咖啡馆
 author: FreelanceSnail
 ---
 <section class="hero">
-  <h1>蜗牛自由生活馆</h1>
+  <h1>蜗牛咖啡馆</h1>
   <p>一个极简、安静的角落，用来记录长期投资、自由职业实践、哲学思考与学习笔记。慢慢来，但要一直向前。</p>
 </section>
 
