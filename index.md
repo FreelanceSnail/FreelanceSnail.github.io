@@ -38,7 +38,7 @@ author: FreelanceSnail
   {% endfor %}
 </ul>
 
-<h3 class="section-title">投资看板</h3>
+<h3 class="section-title">量化实验室</h3>
 <div class="card">
   <p>汇集量化监控与策略跟踪工具，用数据和纪律丈量市场。当前已上线 <a href="/dashboard/momentum-rotation/">动量轮动</a>。
   为每个指标新增一个子页面（例如 <code>/dashboard/alpha-curve</code>），将数据可视化或结果说明写进页面即可。</p>
