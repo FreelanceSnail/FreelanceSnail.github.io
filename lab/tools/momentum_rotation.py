@@ -35,8 +35,8 @@ PERIODS = [21, 22, 23, 24]
 
 def _to_sina_symbol(code: str) -> str:
     """Map numeric ETF code to Sina exchange-prefixed symbol."""
-    # Shanghai-listed codes start with 5 / 51, Shenzhen with 1 / 15 / 16
-    prefix = "sh" if code.startswith("5") else "sz"
+    # Shanghai: 5xxxxx / 6xxxxx; Shenzhen: 0xxxxx / 1xxxxx / 3xxxxx
+    prefix = "sh" if code[0] in ("5", "6") else "sz"
     return f"{prefix}{code}"
 
 
