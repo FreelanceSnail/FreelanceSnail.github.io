@@ -176,9 +176,9 @@ def main() -> None:
     )
 
     root = Path(__file__).resolve().parents[2]
-    data_dir = root / "_data"
-    data_dir.mkdir(exist_ok=True)
-    out_path = data_dir / "momentum_rotation.json"
+    lab_dir = root / "lab"
+    lab_dir.mkdir(exist_ok=True)
+    out_path = lab_dir / "momentum-data.json"
     out_path.write_text(
         json.dumps(dataset, ensure_ascii=False, indent=2), encoding="utf-8"
     )

@@ -11,100 +11,14 @@ permalink: /dashboard/momentum-rotation/
 - 数据源：Akshare `fund_etf_hist_em`
 - 更新方式：`python lab/tools/momentum_rotation.py`（需提前 `pip install -U akshare pandas`）
 
-{% assign dataset = site.data.momentum_rotation %}
-{% if dataset %}
-{% assign start_y = dataset.start_date | slice: 0, 4 %}
-{% assign start_m = dataset.start_date | slice: 4, 2 %}
-{% assign start_d = dataset.start_date | slice: 6, 2 %}
-{% assign start_fmt = start_y | append: "-" | append: start_m | append: "-" | append: start_d %}
-{% assign end_y = dataset.end_date | slice: 0, 4 %}
-{% assign end_m = dataset.end_date | slice: 4, 2 %}
-{% assign end_d = dataset.end_date | slice: 6, 2 %}
-{% assign end_fmt = end_y | append: "-" | append: end_m | append: "-" | append: end_d %}
-
-> 数据时间窗：{{ start_fmt }} ~ {{ end_fmt }}；生成时间：{{ dataset.generated_at }}。
-
-<table class="momentum-table">
-  <thead>
-    <tr>
-      <th>标的</th>
-      <th>代码</th>
-      {% for period in dataset.periods %}
-      <th>{{ period }}日</th>
-      {% endfor %}
-      <th>最新收盘日</th>
-      <th>最新收盘价</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for asset in dataset.assets %}
-    <tr>
-      <td class="name-cell">{{ asset.name }}</td>
-      <td class="code-cell">{{ asset.code }}</td>
-      {% for period in dataset.periods %}
-        {% assign pkey = period | append: "" %}
-        {% assign leader = dataset.leaders[pkey] %}
-        {% assign val = asset.returns[pkey] %}
-        {% if val %}
-          {% assign pct = val | times: 100 %}
-          <td class="num {% if asset.code == leader %}is-best{% endif %}">{{ pct | round: 2 }}%</td>
-        {% else %}
-          <td class="num">--</td>
-        {% endif %}
-      {% endfor %}
-      <td class="num">{{ asset.last_date }}</td>
-      <td class="num">{{ asset.last_close }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div id="momentum-container">
+  <div class="momentum-loading">正在加载数据…</div>
+</div>
 
 <p class="notes">
   刷新逻辑：脚本默认回溯 180 天的日线数据，通过收盘价计算 N 日涨幅；如需调整窗口，可修改
   <code>lab/tools/momentum_rotation.py</code> 中的 <code>start</code> 计算逻辑。
 </p>
-
-<style>
-.momentum-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 1.5rem 0;
-  font-size: 0.95rem;
-}
-.momentum-table th,
-.momentum-table td {
-  border: 1px solid #e5e7eb;
-  padding: 0.6rem 0.8rem;
-}
-.momentum-table th {
-  background: #f8fafc;
-  text-align: center;
-  font-weight: 600;
-}
-.momentum-table td.name-cell,
-.momentum-table td.code-cell {
-  text-align: left;
-  font-weight: 600;
-}
-.momentum-table td.num {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-.is-best {
-  background: #fff3bf;
-  color: #8c6d1f;
-  font-weight: 700;
-}
-.notes {
-  color: #4b5563;
-  font-size: 0.9rem;
-}
-</style>
-{% else %}
-
-> 数据文件缺失或尚未生成，请先运行 `python lab/tools/momentum_rotation.py`（需安装 `akshare` 与 `pandas`）以写入 `_data/momentum_rotation.json`。
-
-{% endif %}
 
 ### 刷新数据
 
@@ -116,4 +30,74 @@ python -m venv venv
 ./venv/bin/python lab/tools/momentum_rotation.py
 ```
 
-脚本会拉取最新数据并刷新 `_data/momentum_rotation.json`。若在服务器运行，记得定时任务前先激活虚拟环境。
+脚本会拉取最新数据并刷新 `lab/momentum-data.json`。若在服务器运行，记得定时任务前先激活虚拟环境。
+
+<link rel="stylesheet" href="/lab/momentum-rotation.css">
+
+<script>
+(function() {
+  const container = document.getElementById('momentum-container');
+
+  function formatDate(yyyymmdd) {
+    return yyyymmdd.slice(0, 4) + '-' + yyyymmdd.slice(4, 6) + '-' + yyyymmdd.slice(6, 8);
+  }
+
+  function render(dataset) {
+    const startFmt = formatDate(dataset.start_date);
+    const endFmt = formatDate(dataset.end_date);
+
+    let html = '<p class="notes">数据时间窗：' + startFmt + ' ~ ' + endFmt + '；生成时间：' + dataset.generated_at + '。</p>';
+
+    html += '<table class="momentum-table"><thead><tr><th>标的</th><th>代码</th>';
+    for (const period of dataset.periods) {
+      html += '<th>' + period + '日</th>';
+    }
+    html += '<th>最新收盘日</th><th>最新收盘价</th></tr></thead><tbody>';
+
+    for (const asset of dataset.assets) {
+      html += '<tr>';
+      html += '<td class="name-cell">' + asset.name + '</td>';
+      html += '<td class="code-cell">' + asset.code + '</td>';
+      for (const period of dataset.periods) {
+        const pkey = String(period);
+        const leader = dataset.leaders[pkey];
+        const val = asset.returns[pkey];
+        if (val !== undefined && val !== null) {
+          const pct = (val * 100).toFixed(2);
+          const bestClass = asset.code === leader ? ' is-best' : '';
+          html += '<td class="num' + bestClass + '">' + pct + '%</td>';
+        } else {
+          html += '<td class="num">--</td>';
+        }
+      }
+      html += '<td class="num">' + asset.last_date + '</td>';
+      html += '<td class="num">' + asset.last_close + '</td>';
+      html += '</tr>';
+    }
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  }
+
+  function showError(msg) {
+    container.innerHTML = '<div class="momentum-error">' + msg + '</div>';
+  }
+
+  fetch('/lab/momentum-data.json')
+    .then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(data => {
+      if (!data.assets || data.assets.length === 0) {
+        showError('数据文件为空，请先运行 <code>python lab/tools/momentum_rotation.py</code> 生成数据。');
+        return;
+      }
+      render(data);
+    })
+    .catch(err => {
+      showError('加载数据失败：' + err.message + '<br>请确认已运行 <code>python lab/tools/momentum_rotation.py</code> 生成数据。');
+      console.error(err);
+    });
+})();
+</script>

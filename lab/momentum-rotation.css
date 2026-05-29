@@ -1,0 +1,55 @@
+/* Momentum rotation table styles */
+.momentum-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.95rem;
+}
+
+.momentum-table th,
+.momentum-table td {
+  border: 1px solid #e5e7eb;
+  padding: 0.6rem 0.8rem;
+}
+
+.momentum-table th {
+  background: #f8fafc;
+  text-align: center;
+  font-weight: 600;
+}
+
+.momentum-table td.name-cell,
+.momentum-table td.code-cell {
+  text-align: left;
+  font-weight: 600;
+}
+
+.momentum-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.is-best {
+  background: #fff3bf;
+  color: #8c6d1f;
+  font-weight: 700;
+}
+
+.notes {
+  color: #4b5563;
+  font-size: 0.9rem;
+}
+
+.momentum-loading {
+  padding: 2rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.momentum-error {
+  padding: 1.2rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #991b1b;
+}
