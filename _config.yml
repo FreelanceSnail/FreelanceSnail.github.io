@@ -12,6 +12,11 @@ navigation:
     url: /blog/
   - name: 投资看板
     url: /dashboard/
+    children:
+      - name: 动量轮动
+        url: /dashboard/momentum-rotation/
+      - name: 净值曲线
+        url: /dashboard/nav-chart/
   - name: 关于
     url: /about/
 

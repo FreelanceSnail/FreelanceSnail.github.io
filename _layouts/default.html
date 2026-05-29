@@ -18,7 +18,18 @@
       <nav class="nav">
         {% assign links = site.navigation | default: site.data.navigation %}
         {% for item in links %}
-          <a class="nav__link{% if page.url == item.url %} nav__link--active{% endif %}" href="{{ item.url | relative_url }}">{{ item.name }}</a>
+          {% if item.children %}
+            <div class="nav__dropdown">
+              <a class="nav__link{% if page.url == item.url %} nav__link--active{% endif %}" href="{{ item.url | relative_url }}">{{ item.name }}</a>
+              <div class="nav__dropdown-menu">
+                {% for child in item.children %}
+                  <a class="nav__dropdown-item{% if page.url == child.url %} nav__dropdown-item--active{% endif %}" href="{{ child.url | relative_url }}">{{ child.name }}</a>
+                {% endfor %}
+              </div>
+            </div>
+          {% else %}
+            <a class="nav__link{% if page.url == item.url %} nav__link--active{% endif %}" href="{{ item.url | relative_url }}">{{ item.name }}</a>
+          {% endif %}
         {% endfor %}
       </nav>
     </div>

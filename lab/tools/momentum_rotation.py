@@ -12,6 +12,8 @@ Dependencies:
 from __future__ import annotations
 
 import json
+import time
+import random
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List
@@ -31,13 +33,77 @@ TARGETS = {
 PERIODS = [21, 22, 23, 24]
 
 
-def _fetch_history(code: str, start_date: str, end_date: str) -> pd.DataFrame:
-    """Download ETF daily data and keep chronological rows."""
-    df = ak.fund_etf_hist_em(symbol=code, period="daily", start_date=start_date, end_date=end_date)
+def _to_sina_symbol(code: str) -> str:
+    """Map numeric ETF code to Sina exchange-prefixed symbol."""
+    # Shanghai-listed codes start with 5 / 51, Shenzhen with 1 / 15 / 16
+    prefix = "sh" if code.startswith("5") else "sz"
+    return f"{prefix}{code}"
+
+
+def _fetch_history_sina(code: str, start_date: str, end_date: str) -> pd.DataFrame:
+    """Download ETF daily data from Sina. No start/end params – filter locally."""
+    sina_code = _to_sina_symbol(code)
+    df = ak.fund_etf_hist_sina(symbol=sina_code)
+    df = df.rename(columns={"date": "日期", "close": "收盘"})
+    df["日期"] = pd.to_datetime(df["日期"])
+    # Filter date range
+    df = df[(df["日期"] >= pd.Timestamp(start_date)) & (df["日期"] <= pd.Timestamp(end_date))]
+    df.sort_values("日期", inplace=True)
+    df.reset_index(drop=True, inplace=True)
+    return df
+
+
+def _fetch_history_em(code: str, start_date: str, end_date: str) -> pd.DataFrame:
+    """Download ETF daily data from Eastmoney."""
+    df = ak.fund_etf_hist_em(
+        symbol=code, period="daily", start_date=start_date, end_date=end_date
+    )
     df["日期"] = pd.to_datetime(df["日期"])
     df.sort_values("日期", inplace=True)
     df.reset_index(drop=True, inplace=True)
     return df
+
+
+def _fetch_history(
+    code: str, start_date: str, end_date: str, max_retries: int = 3
+) -> pd.DataFrame:
+    """
+    Download ETF daily data.
+    Try Sina first (more stable); fall back to Eastmoney if it fails.
+    """
+    last_err = None
+
+    # --- primary: Sina ---
+    for attempt in range(1, max_retries + 1):
+        try:
+            return _fetch_history_sina(code, start_date, end_date)
+        except Exception as e:
+            last_err = e
+            if attempt < max_retries:
+                wait = 1 + random.random() * 2
+                print(
+                    f"  ⚠️ {code} (sina) attempt {attempt} failed"
+                    f" ({e.__class__.__name__}), retrying in {wait:.1f}s..."
+                )
+                time.sleep(wait)
+
+    print(f"  ⚠️ {code} sina failed after {max_retries} attempts, falling back to eastmoney...")
+
+    # --- fallback: Eastmoney ---
+    for attempt in range(1, max_retries + 1):
+        try:
+            return _fetch_history_em(code, start_date, end_date)
+        except Exception as e:
+            last_err = e
+            if attempt < max_retries:
+                wait = 2 + random.random() * 3
+                print(
+                    f"  ⚠️ {code} (em) attempt {attempt} failed"
+                    f" ({e.__class__.__name__}), retrying in {wait:.1f}s..."
+                )
+                time.sleep(wait)
+
+    raise last_err
 
 
 def _compute_returns(df: pd.DataFrame) -> Dict[int, float]:
@@ -84,7 +150,10 @@ def build_dataset(start_date: str, end_date: str) -> Dict:
     leaders: Dict[str, str] = {}
     for period in PERIODS:
         period_key = str(period)
-        best = max(assets, key=lambda item: item["returns"].get(period_key, float("-inf")))
+        best = max(
+            assets,
+            key=lambda item: item["returns"].get(period_key, float("-inf")),
+        )
         if period_key in best["returns"]:
             leaders[period_key] = best["code"]
 
@@ -95,20 +164,24 @@ def build_dataset(start_date: str, end_date: str) -> Dict:
         "periods": PERIODS,
         "leaders": leaders,
         "assets": assets,
-        "source": "akshare fund_etf_hist_em",
+        "source": "akshare (sina primary, eastmoney fallback)",
     }
 
 
 def main() -> None:
     today = datetime.now().date()
     start = today - timedelta(days=180)
-    dataset = build_dataset(start_date=start.strftime("%Y%m%d"), end_date=today.strftime("%Y%m%d"))
+    dataset = build_dataset(
+        start_date=start.strftime("%Y%m%d"), end_date=today.strftime("%Y%m%d")
+    )
 
     root = Path(__file__).resolve().parents[2]
     data_dir = root / "_data"
     data_dir.mkdir(exist_ok=True)
     out_path = data_dir / "momentum_rotation.json"
-    out_path.write_text(json.dumps(dataset, ensure_ascii=False, indent=2), encoding="utf-8")
+    out_path.write_text(
+        json.dumps(dataset, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     print(f"Wrote {out_path}")
 
 
