@@ -41,7 +41,7 @@ permalink: /dashboard/nav-chart/
         const SERIES_CONFIG = {
             '净值': { color: '#007AFF', lineWidth: 3, visible: true },
             '上证指数': { color: '#FF3B30', lineWidth: 1.5, visible: false },
-            '沪深300': { color: '#FF9500', lineWidth: 1.5, visible: false },
+            '沪深300': { color: '#FF9500', lineWidth: 1.5, visible: true },
             '中证500': { color: '#34C759', lineWidth: 1.5, visible: false },
             '标普500': { color: '#5856D6', lineWidth: 1.5, visible: false },
             '纳斯达克100': { color: '#FF2D55', lineWidth: 1.5, visible: false }
