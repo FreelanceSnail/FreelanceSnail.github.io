@@ -8,8 +8,8 @@ permalink: /dashboard/momentum-rotation/
 利用 Akshare 拉取 4 支 ETF 的近月动量表现，按 21/22/23/24 个交易日的涨幅进行横向比较，并高亮各周期的领先标的。
 
 - 标的池：30年国债ETF（511090）、黄金ETF（518880）、创业板ETF（159915）、中证A50ETF（563080）
-- 数据源：Akshare `fund_etf_hist_em`
-- 更新方式：`python lab/tools/momentum_rotation.py`（需提前 `pip install -U akshare pandas`）
+- 数据源：Akshare `fund_etf_hist_em` + Sina 实时行情
+- 更新方式：`python lab/tools/momentum_rotation.py`（需提前 `pip install -U akshare pandas requests`）
 
 <div id="momentum-container">
   <div class="momentum-loading">正在加载数据…</div>
@@ -52,7 +52,7 @@ python -m venv venv
     for (const period of dataset.periods) {
       html += '<th>' + period + '日</th>';
     }
-    html += '<th>最新收盘日</th><th>最新收盘价</th></tr></thead><tbody>';
+    html += '<th>最新价格时间</th><th>最新价</th></tr></thead><tbody>';
 
     for (const asset of dataset.assets) {
       html += '<tr>';
@@ -70,8 +70,8 @@ python -m venv venv
           html += '<td class="num">--</td>';
         }
       }
-      html += '<td class="num">' + asset.last_date + '</td>';
-      html += '<td class="num">' + asset.last_close + '</td>';
+      html += '<td class="num">' + asset.last_price_time + '</td>';
+      html += '<td class="num">' + asset.last_price + '</td>';
       html += '</tr>';
     }
 

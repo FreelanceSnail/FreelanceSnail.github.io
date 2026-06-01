@@ -12,6 +12,7 @@ Dependencies:
 from __future__ import annotations
 
 import json
+import re
 import time
 import random
 from datetime import datetime, timedelta
@@ -20,6 +21,7 @@ from typing import Dict, List
 
 import akshare as ak
 import pandas as pd
+import requests
 
 
 TARGETS = {
@@ -38,6 +40,63 @@ def _to_sina_symbol(code: str) -> str:
     # Shanghai: 5xxxxx / 6xxxxx; Shenzhen: 0xxxxx / 1xxxxx / 3xxxxx
     prefix = "sh" if code[0] in ("5", "6") else "sz"
     return f"{prefix}{code}"
+
+
+def fetch_realtime_quotes(codes: list[str]) -> dict[str, dict]:
+    """Fetch real-time quotes from Sina hq.sinajs.cn.
+
+    Returns: { "sh511090": {"current_price": 117.087, "date": "2026-06-01",
+              "time": "15:00:01", "datetime": "2026-06-01 15:00:01"}, ... }
+
+    On non-trading days the API returns the last trading session snapshot,
+    so date/time naturally reflect the last market close.
+    """
+    sina_codes = [_to_sina_symbol(code) for code in codes]
+    codes_str = ",".join(sina_codes)
+    url = f"https://hq.sinajs.cn/list={codes_str}"
+    headers = {"Referer": "https://finance.sina.com.cn"}
+
+    resp = requests.get(url, headers=headers, timeout=10)
+    resp.encoding = "gbk"
+    text = resp.text
+
+    quotes: dict[str, dict] = {}
+    for code in sina_codes:
+        pattern = rf'var hq_str_{re.escape(code)}="([^"]*)";'
+        match = re.search(pattern, text)
+        if not match:
+            print(f"  ⚠️  Sina quote not found for {code}")
+            continue
+
+        raw = match.group(1)
+        if not raw or raw.strip() == "":
+            print(f"  ⚠️  Sina quote empty for {code}")
+            continue
+
+        parts = raw.split(",")
+        if len(parts) < 4:
+            print(f"  ⚠️  Sina quote incomplete for {code}: {len(parts)} fields")
+            continue
+
+        try:
+            current_price = float(parts[3])
+            # Sina ETF quote fields: name(0), open(1), prev_close(2), current(3), ...,
+            # date(30), time(31), trailing field(s). Use fixed indices for reliability.
+            date_str = parts[30] if len(parts) > 30 else ""
+            time_str = parts[31] if len(parts) > 31 else ""
+            datetime_str = f"{date_str} {time_str}".strip() if date_str else ""
+
+            quotes[code] = {
+                "current_price": current_price,
+                "date": date_str,
+                "time": time_str,
+                "datetime": datetime_str,
+            }
+        except (ValueError, IndexError) as exc:
+            print(f"  ⚠️  Sina quote parse error for {code}: {exc}")
+            continue
+
+    return quotes
 
 
 def _fetch_history_sina(code: str, start_date: str, end_date: str) -> pd.DataFrame:
@@ -130,10 +189,29 @@ def _collect_prices(df: pd.DataFrame) -> Dict[str, float]:
     return prices
 
 
-def build_dataset(start_date: str, end_date: str) -> Dict:
+def build_dataset(start_date: str, end_date: str, realtime_quotes: dict[str, dict]) -> Dict:
     assets: List[Dict] = []
     for code, name in TARGETS.items():
         history = _fetch_history(code, start_date, end_date)
+
+        sina_code = _to_sina_symbol(code)
+        rt = realtime_quotes.get(sina_code, {})
+        current_price = rt.get("current_price")
+        rt_date = rt.get("date", "")
+        rt_datetime = rt.get("datetime", "")
+
+        # Merge real-time price into history so that closes[-1] is always
+        # the latest price (intraday, post-close, or last-close on holidays).
+        if current_price is not None and rt_date:
+            last_hist_date = history["日期"].iloc[-1].strftime("%Y-%m-%d")
+            if rt_date > last_hist_date:
+                # New trading day not yet in historical data → append
+                new_row = pd.DataFrame({"日期": [pd.Timestamp(rt_date)], "收盘": [current_price]})
+                history = pd.concat([history, new_row], ignore_index=True)
+            elif rt_date == last_hist_date:
+                # Same day → replace the close with the real-time price
+                history.loc[history.index[-1], "收盘"] = current_price
+
         asset_returns = _compute_returns(history)
         asset_prices = _collect_prices(history)
         assets.append(
@@ -142,8 +220,8 @@ def build_dataset(start_date: str, end_date: str) -> Dict:
                 "name": name,
                 "returns": {str(k): v for k, v in asset_returns.items()},
                 "prices": asset_prices,
-                "last_date": history["日期"].iloc[-1].strftime("%Y-%m-%d"),
-                "last_close": float(history["收盘"].iloc[-1]),
+                "last_price_time": rt_datetime or history["日期"].iloc[-1].strftime("%Y-%m-%d"),
+                "last_price": current_price if current_price is not None else float(history["收盘"].iloc[-1]),
             }
         )
 
@@ -164,15 +242,21 @@ def build_dataset(start_date: str, end_date: str) -> Dict:
         "periods": PERIODS,
         "leaders": leaders,
         "assets": assets,
-        "source": "akshare (sina primary, eastmoney fallback)",
+        "source": "akshare (sina primary, eastmoney fallback) + sina real-time",
     }
 
 
 def main() -> None:
     today = datetime.now().date()
     start = today - timedelta(days=180)
+
+    print("Fetching real-time quotes from Sina...")
+    realtime_quotes = fetch_realtime_quotes(list(TARGETS.keys()))
+
     dataset = build_dataset(
-        start_date=start.strftime("%Y%m%d"), end_date=today.strftime("%Y%m%d")
+        start_date=start.strftime("%Y%m%d"),
+        end_date=today.strftime("%Y%m%d"),
+        realtime_quotes=realtime_quotes,
     )
 
     root = Path(__file__).resolve().parents[2]
