@@ -39,10 +39,15 @@ author: FreelanceSnail
 </ul>
 
 <h3 class="section-title">量化实验室</h3>
-<div class="card">
-  <p>汇集量化监控与策略跟踪工具，用数据和纪律丈量市场。当前已上线 <a href="/dashboard/momentum-rotation/">动量轮动</a>。
-  为每个指标新增一个子页面（例如 <code>/dashboard/alpha-curve</code>），将数据可视化或结果说明写进页面即可。</p>
-  <div class="callout">
-    <strong>下一步</strong>：新建 Markdown 页面，使用 <code>layout: page</code> 或自定义布局，嵌入图表或表格，并在 <code>_config.yml</code> 的 <code>navigation</code> 中添加链接。
-  </div>
+<div class="lab-grid">
+  <a class="lab-card" href="/dashboard/momentum-rotation/">
+    <span class="lab-card__icon">📈</span>
+    <span class="lab-card__title">动量轮动</span>
+    <span class="lab-card__desc">聚焦 21-24 个交易日的动量表现，快速定位强势标的。</span>
+  </a>
+  <a class="lab-card" href="/dashboard/nav-chart/">
+    <span class="lab-card__icon">📊</span>
+    <span class="lab-card__title">净值曲线</span>
+    <span class="lab-card__desc">策略净值与主要指数对比分析，支持自定义区间与对数坐标。</span>
+  </a>
 </div>

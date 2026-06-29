@@ -31,4 +31,5 @@
 ## Content & Assets Tips
 - Place images under `assets/`, prefer compressed formats (e.g., `jpg`/`webp`), and add alt text in Markdown (`![alt](../assets/example.jpg)`).
 - Keep navigation labels synchronized with `_config.yml`; update both the menu and target page when renaming sections.
+- New blog posts can start from `_templates/post-template.md`: copy it to `_posts/YYYY-MM-DD-slug.md`, update front matter and body, then remove the top comment block. Alternatively, use the `create-post` skill (`python3 .agents/skills/create-post/create-post.py "文章主题"`) to generate the file with the current date and a proper slug automatically.
 - Avoid committing generated `_site/` output; only source files belong in the repo.
