@@ -38,7 +38,7 @@ cover_image: /assets/images/cover-your-image.svg
    curl -L -o ~/Library/Application\ Support/v2raya/geosite.dat https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat
    ```
 
-如果由于v2ray服务无法启动导致无法正常下载，需要通过另外一台可以正常访问github的电脑来下载再拷贝到这台电脑的对应位置。
+   如果由于v2ray服务无法启动导致无法正常下载，需要通过另外一台可以正常访问github的电脑来下载再拷贝到这台电脑的对应位置。
 
 4. **修改 plist**：在 v2raya 的 plist 中 `<dict>` 内添加环境变量：
 
