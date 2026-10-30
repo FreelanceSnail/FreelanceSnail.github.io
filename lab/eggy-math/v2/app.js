@@ -21,6 +21,7 @@ function refresh() {
   for (let i=0;i<5;i++) { const dot = document.createElement('span'); dot.className = `journey-dot ${solved.has(i)?'done':i===current?'current':''}`;dot.textContent=solved.has(i)?'✓':i+1;dot.setAttribute('aria-label',`第${i+1}站${solved.has(i)?'已完成':i===current?'当前':''}`);$('#island-list').append(dot); }
 }
 function showQuestion(index, ref = null) {
+  $('#task-prompt').classList.remove('finish-stars');
   cancelTransition();current=index;reviewRef=ref;phase='question';question=ref?E.generateRound(ref.seed)[ref.index]:questions[index];
   $('#task-kicker').textContent=ref?'错题背包 · 再试一次':`第 ${index+1} 站 / 共 5 站`;
   $('#topic-label').textContent=topics[index];$('#task-title').textContent=ref?'这次，一定更接近答案':titles[index];
